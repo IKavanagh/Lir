@@ -137,7 +137,7 @@ int bicgstab(const int n, const double complex *restrict b, double complex *rest
  * x        (input/output) DOUBLE COMPLEX array, dimension (n, 1).
  *          On input the initial guess. On output the final solution of Ax = b.
  * 
- * work     (input) DOUBLE COMPLEX array, dimension (ldw, 7).
+ * work     (input) DOUBLE COMPLEX array, dimension (ldw, 8).
  *          Workspace for resid, direction vector, etc.
  *          Vectors r and s share the same workspace.
  *
@@ -182,14 +182,11 @@ int bicgstab(const int n, const double complex *restrict b, double complex *rest
  * 
  * rfo      (input) DOUBLE COMPLEX array, dimension (n, 1).
  *          Reduced operator used to ignore particular unknown values in the
- *          BiCGSTAB iteration.
+ *          BiCGSTAB iteration. If no reduced operator is to be used NULL can
+ *          be passed in instead.
  *          The corresponding element in rfo for values to be ignored should be
  *          set to 0, whilst it should be set to 1 for all values to be used in
  *          the iteration process.
- *
- * ldr      (input) INTEGER.
- *          Leading dimension of reduced operator.
- *          ldr >= 1
  *
  * Output
  * ======
@@ -215,7 +212,7 @@ int bicgstab(const int n, const double complex *restrict b, double complex *rest
  *
  * =============================================================================
  */
-int rbicgstab(const int n, const double complex *restrict b, double complex *restrict x, double complex *restrict work, const int ldw, int *restrict iter, double *restrict resid, void (*matvec)(const double complex *restrict alpha, const double complex *restrict x, const double complex *restrict beta, double complex *restrict y), void (*pre)(double complex *restrict x, const double complex *restrict b), const double complex *restrict rfo, const int ldr);
+int rbicgstab(const int n, const double complex *restrict b, double complex *restrict x, double complex *restrict work, const int ldw, int *restrict iter, double *restrict resid, void (*matvec)(const double complex *restrict alpha, const double complex *restrict x, const double complex *restrict beta, double complex *restrict y), void (*pre)(double complex *restrict x, const double complex *restrict b), const double complex *restrict rfo);
 
 /**
  * Purpose

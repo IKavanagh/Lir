@@ -77,122 +77,13 @@ inline int max(int a, int b) {
 }
 
 int bicgstab(const int n, const double complex *restrict b, double complex *restrict x, double complex *restrict work, const int ldw, int *restrict iter, double *restrict resid, void (*matvec)(const double complex *restrict alpha, const double complex *restrict x, const double complex *restrict beta, double complex *restrict y), void (*pre)(double complex *restrict x, const double complex *restrict b)) {
-    // TODO: Pass execution to rbicgstab without rfo
-    int r, rtld, p, v, t, phat, shat, s;
-    double complex alpha, beta, omega, rho, rho1 = 1.0, temp;
-
-    // Provides more readable workspace indexing
-    work -= ldw;
-
-    if (n < 0) {
-        return -1;
-    } else if (ldw < max(1, n)) {
-        return -2;
-    } else if (*iter <= 0) {
-        return -3;
-    }
-
-    N = n;
-    
-    int maxit = *iter;
-    double tol = *resid;
-
-    // Workspace columns
-    r = 1;
-    rtld = 2;
-    p = 3;
-    v = 4;
-    t = 5;
-    phat = 6;
-    shat = 7;
-    s = 1;
-
-    // Initial residual
-    cblas_zcopy(n, &b[0], inc, &work[r * ldw], inc);
-    if (cblas_dznrm2(n, &x[0], inc) > partol) {
-        (*matvec)(&minus_one, &x[0], &one, &work[r * ldw]); // r = -A*x + b
-        if (cblas_dznrm2(n, &work[r * ldw], inc) <= tol) {
-            // Initial guess is less than tolerance
-            return 0;
-        }
-    }
-    cblas_zcopy(n, &work[r * ldw], inc, &work[rtld * ldw], inc);
-
-    double bnrm2 = cblas_dznrm2(n, &b[0], inc);
-    if (bnrm2 < partol) {
-        bnrm2 = 1.0;
-    }
-
-    *iter = 0;
-    *resid = 1;
-
-    while (*resid > tol && *iter < maxit) {
-        ++(*iter);
-
-        cblas_zdotc_sub(n, &work[rtld * ldw], inc, &work[r * ldw], inc, &rho); // rho = <rtld, r>
-        if (cabs(rho) < partol) {
-            return -10;
-        }
-
-        if (*iter > 1) {
-            beta = (rho / rho1) * (alpha / omega); // beta = rho / rho1 * (alpha / omega)
-
-            temp = -omega;
-            cblas_zaxpy(n, &temp, &work[v * ldw], inc, &work[p * ldw], inc); // p = p - w*v
-            cblas_zscal(n, &beta, &work[p * ldw], inc); // p = beta*(p - w*v)
-            cblas_zaxpy(n, &one, &work[r * ldw], inc, &work[p * ldw], inc); // p = r + beta*(p - w*v)
-        } else {
-            cblas_zcopy(n, &work[r * ldw], inc, &work[p * ldw], inc);
-        }
-
-        (*pre)(&work[phat * ldw], &work[p * ldw]);
-        (*matvec)(&one, &work[phat * ldw], &zero, &work[v * ldw]); // v = A*phat
-
-        cblas_zdotc_sub(n, &work[rtld * ldw], inc, &work[v * ldw], inc, &alpha); // alpha = <rtld, v>
-        alpha = rho / alpha; // alpha = rho / <rtld, v>
-
-        temp = -alpha;
-        cblas_zaxpy(n, &temp, &work[v * ldw], inc, &work[r * ldw], inc); // s = r - alpha*v
-        if (cblas_dznrm2(n, &work[s * ldw], inc) <= tol) {
-            cblas_zaxpy(n, &alpha, &work[phat * ldw], inc, &x[0], inc); // x = x + alpha*p
-            *resid = cblas_dznrm2(n, &work[s * ldw], inc) / bnrm2;
-            break;
-        }
-
-        (*pre)(&work[shat * ldw], &work[s * ldw]);
-        (*matvec)(&one, &work[shat * ldw], &zero, &work[t * ldw]); // t = A*shat
-
-        cblas_zdotc_sub(n, &work[t * ldw], inc, &work[s * ldw], inc, &omega); // omega = <t, s>
-        cblas_zdotc_sub(n, &work[t * ldw], inc, &work[t * ldw], inc, &temp); // temp = <t, t>
-        omega /= temp; // omega = <t, s> / <t, t>
-
-        cblas_zaxpy(n, &alpha, &work[phat * ldw], inc, &x[0], inc); // x = x + alpha*phat
-        cblas_zaxpy(n, &omega, &work[shat * ldw], inc, &x[0], inc); // x = x + alpha*phat + omega*shat
-
-        temp = -omega;
-        cblas_zaxpy(n, &temp, &work[t * ldw], inc, &work[r * ldw], inc); // r = s - omega*t
-
-        *resid = cblas_dznrm2(n, &work[r * ldw], inc) / bnrm2;
-
-        if (*resid <= tol || *iter == maxit) {
-            break;
-        }
-
-        if (cabs(omega) < partol) {
-            return -11;
-        }
-
-        rho1 = rho;
-    }
-    if (*iter == maxit) {
-        return 1;
-    }
-    return 0;
+    return rbicgstab(n, b, x, work, ldw, iter, resid, (*matvec), (*pre), NULL);
 }
 
-int rbicgstab(const int n, const double complex *restrict b, double complex *restrict x, double complex *restrict work, const int ldw, int *restrict iter, double *restrict resid, void (*matvec)(const double complex *restrict alpha, const double complex *restrict x, const double complex *restrict beta, double complex *restrict y), void (*pre)(double complex *restrict x, const double complex *restrict b), const double complex *restrict rfo, const int ldr) {
+int rbicgstab(const int n, const double complex *restrict b, double complex *restrict x, double complex *restrict work, const int ldw, int *restrict iter, double *restrict resid, void (*matvec)(const double complex *restrict alpha, const double complex *restrict x, const double complex *restrict beta, double complex *restrict y), void (*pre)(double complex *restrict x, const double complex *restrict b), const double complex *restrict rfo) {
     // TODO: Check real error as well as reduced error to determine convergence
-    // TODO: Check why this suffers more from non-convergence
+    // TODO: Check why this suffers more from non-convergence with rfo than
+    //       without
     int r, rtld, p, v, t, phat, shat, red, s;
     double complex alpha, beta, omega, rho, rho1 = 1.0, temp;
 
@@ -232,8 +123,12 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
             return 0;
         }
     }
-    cblas_zgbmv(CblasRowMajor, CblasNoTrans, n, n, 0, 0, &one, rfo, ldr, &work[r * ldw], inc, &zero, &work[rtld * ldw], inc); // Reduced operator
-    cblas_zcopy(n, &work[rtld * ldw], inc, &work[r * ldw], inc);
+    if (rfo) {
+        cblas_zgbmv(CblasRowMajor, CblasNoTrans, n, n, 0, 0, &one, rfo, inc, &work[r * ldw], inc, &zero, &work[rtld * ldw], inc); // Reduced operator
+        cblas_zcopy(n, &work[rtld * ldw], inc, &work[r * ldw], inc);
+    } else {
+        cblas_zcopy(n, &work[r * ldw], inc, &work[rtld * ldw], inc);
+    }
 
     double bnrm2 = cblas_dznrm2(n, &work[r * ldw], inc);
     if (bnrm2 < partol) {
@@ -264,8 +159,10 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
 
         (*pre)(&work[phat * ldw], &work[p * ldw]);
         (*matvec)(&one, &work[phat * ldw], &zero, &work[v * ldw]); // v = A*phat
-        cblas_zgbmv(CblasRowMajor, CblasNoTrans, n, n, 0, 0, &one, rfo, ldr, &work[v * ldw], inc, &zero, &work[red * ldw], inc); // Reduced operator
-        cblas_zcopy(n, &work[red * ldw], inc, &work[v * ldw], inc);
+        if (rfo) { // Reduced operator
+            cblas_zgbmv(CblasRowMajor, CblasNoTrans, n, n, 0, 0, &one, rfo, inc, &work[v * ldw], inc, &zero, &work[red * ldw], inc);
+            cblas_zcopy(n, &work[red * ldw], inc, &work[v * ldw], inc);
+        }
 
         cblas_zdotc_sub(n, &work[rtld * ldw], inc, &work[v * ldw], inc, &alpha); // alpha = <rtld, v>
         alpha = rho / alpha; // alpha = rho / <rtld, v>
@@ -280,8 +177,10 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
 
         (*pre)(&work[shat * ldw], &work[s * ldw]);
         (*matvec)(&one, &work[shat * ldw], &zero, &work[t * ldw]); // t = A*shat
-        cblas_zgbmv(CblasRowMajor, CblasNoTrans, n, n, 0, 0, &one, rfo, ldr, &work[t * ldw], inc, &zero, &work[red * ldw], inc); // Reduced operator
-        cblas_zcopy(n, &work[red * ldw], inc, &work[t * ldw], inc);
+        if (rfo) { // Reduced operator
+            cblas_zgbmv(CblasRowMajor, CblasNoTrans, n, n, 0, 0, &one, rfo, inc, &work[t * ldw], inc, &zero, &work[red * ldw], inc); // Reduced operator
+            cblas_zcopy(n, &work[red * ldw], inc, &work[t * ldw], inc);
+        }
 
         cblas_zdotc_sub(n, &work[t * ldw], inc, &work[s * ldw], inc, &omega); // omega = <t, s>
         cblas_zdotc_sub(n, &work[t * ldw], inc, &work[t * ldw], inc, &temp); // temp = <t, t>
@@ -306,19 +205,21 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
         rho1 = rho;
     }
 
-    // Flip reduced operator
-    for (int i = 0; i < n; ++i) {
-        if (creal(rfo[i]) > partol) {
-            work[red * ldw + i] = 0.0;
-        } else {
-            work[red * ldw + i] = 1.0;
+    if (rfo) {
+        // Flip reduced operator
+        for (int i = 0; i < n; ++i) {
+            if (creal(rfo[i]) > partol) {
+                work[red * ldw + i] = 0.0;
+            } else {
+                work[red * ldw + i] = 1.0;
+            }
         }
-    }
 
-    // Compute ignored values
-    cblas_zcopy(n, &b[0], inc, &work[r * ldw], inc);
-    (*matvec)(&minus_one, &x[0], &one, &work[r * ldw]); // r = b - A*x;
-    cblas_zgbmv(CblasRowMajor, CblasNoTrans, n, n, 0, 0, &one, &work[red * ldw], ldr, &work[r * ldw], inc, &one, &x[0], inc); // x = x + (~rfo)(b - A*x)
+        // Compute ignored values
+        cblas_zcopy(n, &b[0], inc, &work[r * ldw], inc);
+        (*matvec)(&minus_one, &x[0], &one, &work[r * ldw]); // r = b - A*x;
+        cblas_zgbmv(CblasRowMajor, CblasNoTrans, n, n, 0, 0, &one, &work[red * ldw], inc, &work[r * ldw], inc, &one, &x[0], inc); // x = x + (~rfo)(b - A*x)
+    }
 
     if (*iter == maxit) {
         return 1;

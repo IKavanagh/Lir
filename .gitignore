@@ -13,5 +13,8 @@
 objects/
 *.o
 
+# Output
+output/*
+
 # Sphinx build directory
 */_build/

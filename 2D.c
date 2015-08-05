@@ -24,7 +24,6 @@ int main(int argc, char **argv) {
     }
 
     int err = 0;
-    double t = monotonic_clock();
 
     const char *filename = "input/building.txt";
     double f = atof(argv[1]);
@@ -33,6 +32,8 @@ int main(int argc, char **argv) {
     if (argc > 4) {
         filename = argv[4];
     }
+    
+    double t = monotonic_clock();
 
     if ((err = init_shape(filename, f, 10, block_size)) ||
         (err = init_vefie(f, antenna, hertzian_dipole))) {
@@ -43,17 +44,15 @@ int main(int argc, char **argv) {
 
     printf("Initialised VEFIE elements for a problem size of %d in %.4f seconds.\n", n*m, t);
 
-    t = monotonic_clock();
-
-    int iter = 1000;
+    int iter = 1000, N = n*m, info;
     double resid = 1e-3;
-    int N = n*m;
 
     double complex *work = mkl_malloc((size_t) N * 8 * sizeof *work, alignment);
-    int info = rbicgstab(n*m, V, E, work, n*m, &iter, &resid, matvec, no_pre, rfo, 1);
 
+    t = monotonic_clock();
+    info = rbicgstab(N, V, E, work, N, &iter, &resid, matvec, no_pre, rfo);
     t = monotonic_clock() - t;
-    
+
     iprint(info, iter, t);
     if (info == 0) {
         FILE *fp;
