@@ -9,8 +9,10 @@ The initial version of Lir has been developed by Ian Kavanagh as part of his PhD
 - [Compiling and Executing](#compiling-and-executing)
     - [Prerequisites](#prerequisites)
     - [2D](#2d)
-        [Sample](#2d)
+        - [Sample](#2d)
     - [Plotting](#plotting)
+- [Contributing](#contributing)
+- [Documentation](#documentation)
 - [Authors](#authors)
 - [Copyright and Licensing Information](#copyright-and-licensing-information)
 
@@ -60,6 +62,18 @@ is known to work and produce valid results. Sample output files for the differen
 ### Plotting ###
 
 [MATLAB](https://uk.mathworks.com/products/matlab/)/[GNU Octave](https://www.gnu.org/software/octave/) files which will plot the output of the electric field overlayed on top of the building can be found in `plot/`. Executing `plot_fields` will plot the electric field found in `output/E.txt` on a surface plot for the positions in `output/position.txt` and overlay the building defined in `output/shape.txt` on top of it.
+
+## Contributing ##
+
+All bug reports, feature requests and feedback should be provided on the [Issues](https://github.com/IKavanagh/Lir/issues) tab of [Github](https://github.com/IKavanagh/Lir/issues).
+
+There are a large number of items which need to be fixed, rewritten or completed which are documented inline (and in my head) but will be moved to the [Issues](https://github.com/IKavanagh/Lir/issues) tab shortly.
+
+Contact details for authors, collaborators and contributors can be found in [Authors](#authors)
+
+## Documentation ##
+
+Most documentation currently resides within the header files in `include/`. It is intended to move all this to the `doc/` folder which houses the base for a [Sphinx](http://sphinx-doc.org/) documentation set which will either be hosted on [Read The Docs](https://readthedocs.org/) or [my personal website](https://iankavanagh.me).
 
 ## Authors ##
 
