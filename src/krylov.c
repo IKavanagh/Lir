@@ -81,10 +81,7 @@ int bicgstab(const int n, const double complex *restrict b, double complex *rest
 }
 
 int rbicgstab(const int n, const double complex *restrict b, double complex *restrict x, double complex *restrict work, const int ldw, int *restrict iter, double *restrict resid, void (*matvec)(const double complex *restrict alpha, const double complex *restrict x, const double complex *restrict beta, double complex *restrict y), void (*pre)(double complex *restrict x, const double complex *restrict b), const double complex *restrict rfo) {
-    // TODO: Check real error as well as reduced error to determine convergence
-    // TODO: Check why this suffers more from non-convergence with rfo than
-    //       without
-    int r, rtld, p, v, t, phat, shat, red, s;
+    int r, rtld, p, v, t, phat, shat, neg, red, s;
     double complex alpha, beta, omega, rho, rho1 = 1.0, temp;
 
     // Provides more readable workspace indexing
@@ -111,8 +108,20 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
     t = 5;
     phat = 6;
     shat = 7;
-    red = 8;
+    neg = 8;
+    red = 9;
     s = 1;
+
+    if (rfo) {
+        // Flip reduced operator
+        for (int i = 0; i < n; ++i) {
+            if (creal(rfo[i]) > partol) {
+                work[neg * ldw + i] = 0.0;
+            } else {
+                work[neg * ldw + i] = 1.0;
+            }
+        }
+    }
 
     // Initial residual
     cblas_zcopy(n, &b[0], inc, &work[r * ldw], inc);
@@ -198,6 +207,23 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
             break;
         }
 
+        if (rfo) {
+            if (*iter % (maxit / 10) == 0) { // Check real error over reduced error
+                // Compute ignored values
+                cblas_zcopy(n, &b[0], inc, &work[red * ldw], inc);
+                (*matvec)(&minus_one, &x[0], &one, &work[red * ldw]); // red = b - A*x
+                cblas_zgbmv(CblasRowMajor, CblasNoTrans, n, n, 0, 0, &one, &work[neg * ldw], inc, &work[red * ldw], inc, &one, &x[0], inc); // x = x + (~rfo)(b - A*x)
+
+                cblas_zcopy(n, &b[0], inc, &work[red * ldw], inc);
+                (*matvec)(&minus_one, &x[0], &one, &work[red * ldw]); // red = b - A*x
+                *resid = cblas_dznrm2(n, &work[red * ldw], inc) / cblas_dznrm2(n, &b[0], inc);
+
+                if (*resid <= tol) {
+                    return 0;
+                }
+            }
+        }
+
         if (cabs(omega) < partol) {
             return -11;
         }
@@ -206,19 +232,10 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
     }
 
     if (rfo) {
-        // Flip reduced operator
-        for (int i = 0; i < n; ++i) {
-            if (creal(rfo[i]) > partol) {
-                work[red * ldw + i] = 0.0;
-            } else {
-                work[red * ldw + i] = 1.0;
-            }
-        }
-
         // Compute ignored values
         cblas_zcopy(n, &b[0], inc, &work[r * ldw], inc);
         (*matvec)(&minus_one, &x[0], &one, &work[r * ldw]); // r = b - A*x;
-        cblas_zgbmv(CblasRowMajor, CblasNoTrans, n, n, 0, 0, &one, &work[red * ldw], inc, &work[r * ldw], inc, &one, &x[0], inc); // x = x + (~rfo)(b - A*x)
+        cblas_zgbmv(CblasRowMajor, CblasNoTrans, n, n, 0, 0, &one, &work[neg * ldw], inc, &work[r * ldw], inc, &one, &x[0], inc); // x = x + (~rfo)(b - A*x)
     }
 
     if (*iter == maxit) {

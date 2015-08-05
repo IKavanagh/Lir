@@ -121,9 +121,12 @@ int bicgstab(const int n, const double complex *restrict b, double complex *rest
  * additional reduced operator. The reduced operator should be used to ignore
  * particular values in the BiCGSTAB iteration so only a reduced number of more
  * important unknown values are solved within the iteration and the remaining
- * values are computed at the end. 
+ * values are computed at the end.
  *
  * Convergence test: (norm(b - Ax) / norm(b)) < tol.
+ *
+ * If using the reduced operator the reduced error is checked when: 
+ * (iter % (maxit / 10)) == 0.
  *
  * Arguments
  * =========
@@ -137,7 +140,7 @@ int bicgstab(const int n, const double complex *restrict b, double complex *rest
  * x        (input/output) DOUBLE COMPLEX array, dimension (n, 1).
  *          On input the initial guess. On output the final solution of Ax = b.
  * 
- * work     (input) DOUBLE COMPLEX array, dimension (ldw, 8).
+ * work     (input) DOUBLE COMPLEX array, dimension (ldw, 9).
  *          Workspace for resid, direction vector, etc.
  *          Vectors r and s share the same workspace.
  *

@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     int iter = 1000, N = n*m, info;
     double resid = 1e-3;
 
-    double complex *work = mkl_malloc((size_t) N * 8 * sizeof *work, alignment);
+    double complex *work = mkl_malloc((size_t) N * 9 * sizeof *work, alignment);
 
     t = monotonic_clock();
     info = rbicgstab(N, V, E, work, N, &iter, &resid, matvec, no_pre, rfo);
