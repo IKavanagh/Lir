@@ -27,12 +27,15 @@
  * Purpose
  * =======
  *
- * Print an n-dimensional integer matrix to stream.
+ * Print an n-dimensional matrix to stream.
  *
  * The first line contains the rank of the matrix. The second line contains the
  * length of each dimension.
  *
  * The matrix output begins on the third line with one entry per line.
+ *
+ * A suitable print function should be supplied to print 1 element of the array
+ * per line.
  *
  * Arguments
  * =========
@@ -43,26 +46,31 @@
  * rank     (input) INTEGER.
  *          The rank of the matrix to be printed.
  * 
- * n        (input) INTEGER array.
+ * n        (input) SIZE_T array.
  *          The dimensions of the matrix.
  * 
- * x        (input) INTEGER array, dimension (n[0], n[1], ...).
+ * x        (input) VOID array, dimension (n[0], n[1], ...).
  *          The matrix to be printed.
+ * 
+ * size     (input) SIZE_T array.
+ *          The size of 1 element of the array.
+ *
+ * print    (external subroutine)
+ *          An external user supplied subroutine to print 1 element of the array
+ *          per line.
  *
  * =============================================================================
  */
-void imprint(FILE *restrict stream, const int rank, const int *n, const int *restrict x);
+void mprint(FILE *restrict stream, const int rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x));
 
 /**
  * Purpose
  * =======
  *
- * Print an n-dimensional material matrix to stream.
+ * Print a three-dimensional matrix to stream.
  *
- * The first line contains the rank of the matrix. The second line contains the
- * length of each dimension.
- *
- * The matrix output begins on the third line with one entry per line.
+ * A suitable print function should be supplied to print 1 element of the array
+ * per line.
  *
  * Arguments
  * =========
@@ -70,85 +78,40 @@ void imprint(FILE *restrict stream, const int rank, const int *n, const int *res
  * stream   (input) FILE pointer.
  *          A file pointer for the file that the matrix is to be printed to.
  * 
- * rank     (input) INTEGER.
- *          The rank of the matrix to be printed.
- * 
- * n        (input) INTEGER array.
- *          The dimensions of the matrix.
- * 
- * x        (input) MATERIAL_T array, dimension (n[0], n[1], ...).
- *          The matrix to be printed.
- *
- * =============================================================================
- */
-void mmprint(FILE *restrict stream, const int rank, const int *n, const material_t *restrict x);
-
-/**
- * Purpose
- * =======
- *
- * Print an n-dimensional complex matrix to stream.
- *
- * The first line contains the rank of the matrix. The second line contains the
- * length of each dimension.
- *
- * The matrix output begins on the third line with one entry per line.
- *
- * Arguments
- * =========
- *
- * stream   (input) FILE pointer.
- *          A file pointer for the file that the matrix is to be printed to.
- * 
- * rank     (input) INTEGER.
- *          The rank of the matrix to be printed.
- * 
- * n        (input) INTEGER array.
- *          The dimensions of the matrix.
- * 
- * x        (input) DOUBLE COMPLEX array, dimension (n[0], n[1], ...).
- *          The matrix to be printed.
- *
- * =============================================================================
- */
-void zmprint(FILE *restrict stream, const int rank, const int *n, const double complex *restrict x);
-
-/**
- * Purpose
- * =======
- *
- * Print a three-dimensional complex matrix to stream.
- *
- * Arguments
- * =========
- *
- * stream   (input) FILE pointer.
- *          A file pointer for the file that the matrix is to be printed to.
- * 
- * n        (input) INTEGER.
+ * n        (input) SIZE_T.
  *          The number of rows of the matrix.
  * 
- * m        (input) INTEGER.
+ * m        (input) SIZE_T.
  *          The number of columns of the matrix.
  * 
- * o        (input) INTEGER.
+ * o        (input) SIZE_T.
  *          The depth of the matrix.
  * 
- * x        (input) DOUBLE COMPLEX array, dimension (n, m, o).
+ * x        (input) VOID array, dimension (n, m, o).
  *          The matrix to be printed.
+ * 
+ * size     (input) SIZE_T array.
+ *          The size of 1 element of the array.
+ *
+ * print    (external subroutine)
+ *          An external user supplied subroutine to print 1 element of the array
+ *          per line.
  *
  * label    (input) STRING.
  *          A name to give the matrix when printing it.
  *
  * =============================================================================
  */
-void zfprint_3d(FILE *restrict stream, const int n, const int m, const int o, const double complex *restrict x, const char *label);
+void mprintf_3d(FILE *restrict stream, const size_t n, const size_t m, const size_t o, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label);
 
 /**
  * Purpose
  * =======
  *
- * Print a two-dimensional complex matrix to stream.
+ * Print a two-dimensional to stream.
+ *
+ * A suitable print function should be supplied to print 1 element of the array
+ * per line.
  *
  * Arguments
  * =========
@@ -156,21 +119,28 @@ void zfprint_3d(FILE *restrict stream, const int n, const int m, const int o, co
  * stream   (input) FILE pointer.
  *          A file pointer for the file that the matrix is to be printed to.
  * 
- * n        (input) INTEGER.
+ * n        (input) SIZE_T.
  *          The number of rows of the matrix.
  * 
- * m        (input) INTEGER.
+ * m        (input) SIZE_T.
  *          The number of columns of the matrix.
  * 
- * x        (input) DOUBLE COMPLEX array, dimension (n, m).
+ * x        (input) VOID array, dimension (n, m).
  *          The matrix to be printed.
+ * 
+ * size     (input) SIZE_T array.
+ *          The size of 1 element of the array.
+ *
+ * print    (external subroutine)
+ *          An external user supplied subroutine to print 1 element of the array
+ *          per line.
  *
  * label    (input) STRING.
  *          A name to give the matrix when printing it.
  *
  * =============================================================================
  */
-void zfprint_2d(FILE *restrict stream, const int n, const int m, const double complex *restrict x, const char *label);
+void mprintf_2d(FILE *restrict stream, const size_t n, const size_t m, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label);
 
 /**
  * Purpose
@@ -178,30 +148,43 @@ void zfprint_2d(FILE *restrict stream, const int n, const int m, const double co
  *
  * Print a one-dimensional complex matrix (vector) to stream.
  *
+ * A suitable print function should be supplied to print 1 element of the array
+ * per line.
+ *
  * Arguments
  * =========
  *
  * stream   (input) FILE pointer.
  *          A file pointer for the file that the matrix is to be printed to.
  * 
- * n        (input) INTEGER.
+ * n        (input) SIZE_T.
  *          Length of the vector.
  * 
- * x        (input) DOUBLE COMPLEX array, dimension (n, 1).
+ * x        (input) VOID array, dimension (n, 1).
  *          The matrix to be printed.
+ * 
+ * size     (input) SIZE_T array.
+ *          The size of 1 element of the array.
+ *
+ * print    (external subroutine)
+ *          An external user supplied subroutine to print 1 element of the array
+ *          per line.
  *
  * label    (input) STRING.
  *          A name to give the matrix when printing it.
  *
  * =============================================================================
  */
-void zfprint_1d(FILE *restrict stream, const int n, const double complex *restrict x, const char *label);
+void mprintf_1d(FILE *restrict stream, const size_t n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label);
 
 /**
  * Purpose
  * =======
  *
- * Prints an n-dimensional complex matrix to stream.
+ * Prints an n-dimensional to stream.
+ *
+ * A suitable print function should be supplied to print 1 element of the array
+ * per line.
  *
  * NOTE: Only 1, 2 and 3 dimensions have been implemented!
  *
@@ -214,118 +197,86 @@ void zfprint_1d(FILE *restrict stream, const int n, const double complex *restri
  * rank     (input) INTEGER.
  *          The rank of the matrix to be printed.
  * 
- * n        (input) INTEGER array.
+ * n        (input) SIZE_T array.
  *          The dimensions of the matrix.
  * 
- * x        (input) DOUBLE COMPLEX array, dimension
- *          (n[0], n[1], ...).
+ * x        (input) VOID array, dimension (n[0], n[1], ...).
  *          The matrix to be printed.
+ * 
+ * size     (input) SIZE_T array.
+ *          The size of 1 element of the array.
+ *
+ * print    (external subroutine)
+ *          An external user supplied subroutine to print 1 element of the array
+ *          per line.
  *
  * label    (input) STRING.
  *          A name to give the matrix when printing it.
  *
  * =============================================================================
  */
-void zfprint(FILE *restrict stream, const int rank, const int *n, const double complex* restrict x, const char *label);
+void mprintf(FILE *restrict stream, const int rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label);
 
 /**
  * Purpose
  * =======
  *
- * Prints an n-dimensional complex matrix to stdout. Only
- * 1, 2 and 3 dimensions have been implemented.
+ * Prints the element pointed to by x which is assumed to be an integer on 1
+ * line in the stream.
  *
  * Arguments
  * =========
- * 
- * rank     (input) INTEGER.
- *          The rank of the matrix to be printed.
- * 
- * n        (input) INTEGER array.
- *          The dimensions of the matrix.
- * 
- * x        (input) DOUBLE COMPLEX array, dimension
- *          (n[0], n[1], ...).
- *          The matrix to be printed.
  *
- * label    (input) STRING.
- *          A name to give the matrix when printing it.
+ * stream   (input) FILE pointer.
+ *          A file pointer for the file that the element is to be printed to.
+ * 
+ * x        (input) VOID pointer.
+ *          A void pointer to the element that should be printed. This is cast
+ *          to an int within the function.
  *
  * =============================================================================
  */
-void zprint(const int rank, const int *n, const double complex *restrict x, const char *label);
+void printi(FILE *restrict stream, const void *x);
 
 /**
  * Purpose
  * =======
  *
- * Print a three-dimensional complex matrix to stdout.
+ * Prints the element pointed to by x which is assumed to be a material on 1
+ * line in the stream.
  *
  * Arguments
  * =========
- * 
- * n        (input) INTEGER.
- *          The number of rows of the matrix.
- * 
- * m        (input) INTEGER.
- *          The number of columns of the matrix.
- * 
- * o        (input) INTEGER.
- *          The depth of the matrix.
- * 
- * x        (input) DOUBLE COMPLEX array, dimension (n, m, o).
- *          The matrix to be printed.
  *
- * label    (input) STRING.
- *          A name to give the matrix when printing it.
+ * stream   (input) FILE pointer.
+ *          A file pointer for the file that the element is to be printed to.
+ * 
+ * x        (input) VOID pointer.
+ *          A void pointer to the element that should be printed. This is cast
+ *          to a material within the function.
  *
  * =============================================================================
  */
-void zprint_3d(const int n, const int m, const int o, const double complex *restrict x, const char *label);
+void printm(FILE *restrict stream, const void *x);
+
 
 /**
  * Purpose
  * =======
  *
- * Print a two-dimensional complex matrix to stdout.
+ * Prints the element pointed to by x which is assumed to be a complex double on
+ * 1 line in the stream.
  *
  * Arguments
  * =========
- * 
- * n        (input) INTEGER.
- *          The number of rows of the matrix.
- * 
- * m        (input) INTEGER.
- *          The number of columns of the matrix.
- * 
- * x        (input) DOUBLE COMPLEX array, dimension (n, m).
- *          The matrix to be printed.
  *
- * label    (input) STRING.
- *          A name to give the matrix when printing it.
+ * stream   (input) FILE pointer.
+ *          A file pointer for the file that the element is to be printed to.
+ * 
+ * x        (input) VOID pointer.
+ *          A void pointer to the element that should be printed. This is cast
+ *          to a complex double within the function.
  *
  * =============================================================================
  */
-void zprint_2d(const int n, const int m, const double complex *restrict x, const char *label);
-
-/**
- * Purpose
- * =======
- *
- * Print a one-dimensional complex matrix (vector) to stdout.
- *
- * Arguments
- * =========
- * 
- * n        (input) INTEGER.
- *          The length of the vector.
- * 
- * x        (input) DOUBLE COMPLEX array, dimension (n, 1).
- *          The matrix to be printed.
- *
- * label    (input) STRING.
- *          A name to give the matrix when printing it.
- *
- * =============================================================================
- */
-void zprint_1d(const int n, const double complex *restrict x, const char *label);
+void printz(FILE *restrict stream, const void *x);

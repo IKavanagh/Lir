@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     if (argc > 4) {
         filename = argv[4];
     }
-    
+
     double t = monotonic_clock();
 
     if ((err = init_shape(filename, f, 10, block_size)) ||
@@ -56,54 +56,54 @@ int main(int argc, char **argv) {
     iprint(info, iter, t);
     if (info == 0) {
         FILE *fp;
-        int dimensions[2] = {1};
+        size_t dimensions[2] = {1};
 
         fp = fopen("output/E.txt", "w");
-        dimensions[0] = n*m;
+        dimensions[0] = (size_t) N;
         dimensions[1] = 1;
-        zmprint(fp, 1, dimensions, E);
+        mprint(fp, 2, dimensions, E, sizeof *E, printz);
         fclose(fp);
 
         fp = fopen("output/position.txt", "w");
-        dimensions[0] = n;
-        dimensions[1] = m;
-        zmprint(fp, 2, dimensions, p);
+        dimensions[0] = (size_t) n;
+        dimensions[1] = (size_t) m;
+        mprint(fp, 2, dimensions, p, sizeof *p, printz);
         fclose(fp);
 
         fp = fopen("output/shape.txt", "w");
-        dimensions[0] = n;
-        dimensions[1] = m;
-        imprint(fp, 2, dimensions, shape);
+        dimensions[0] = (size_t) n;
+        dimensions[1] = (size_t) m;
+        mprint(fp, 2, dimensions, shape, sizeof *shape, printi);
         fclose(fp);
 
         fp = fopen("output/material.txt", "w");
-        dimensions[0] = materials;
+        dimensions[0] = (size_t) materials;
         dimensions[1] = 1;
-        mmprint(fp, 2, dimensions, material);
+        mprint(fp, 2, dimensions, material, sizeof *material, printm);
         fclose(fp);
 
         fp = fopen("output/D.txt", "w");
-        dimensions[0] = n*m;
+        dimensions[0] = (size_t) N;
         dimensions[1] = 1;
-        zmprint(fp, 1, dimensions, D);
+        mprint(fp, 2, dimensions, D, sizeof *D, printz);
         fclose(fp);
 
         fp = fopen("output/G.txt", "w");
-        dimensions[0] = n*m;
+        dimensions[0] = (size_t) N;
         dimensions[1] = 1;
-        zmprint(fp, 1, dimensions, G);
+        mprint(fp, 2, dimensions, G, sizeof *G, printz);
         fclose(fp);
 
         fp = fopen("output/V.txt", "w");
-        dimensions[0] = n*m;
+        dimensions[0] = (size_t) N;
         dimensions[1] = 1;
-        zmprint(fp, 1, dimensions, V);
+        mprint(fp, 2, dimensions, V, sizeof *V, printz);
         fclose(fp);
 
         fp = fopen("output/rfo.txt", "w");
-        dimensions[0] = n*m;
+        dimensions[0] = (size_t) N;
         dimensions[1] = 1;
-        zmprint(fp, 1, dimensions, rfo);
+        mprint(fp, 2, dimensions, rfo, sizeof *rfo, printz);
         fclose(fp);
     }
 

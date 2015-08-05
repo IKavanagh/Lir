@@ -18,123 +18,89 @@
 
 #include "matio.h"
 
-#include <math.h>
-
-void imprint(FILE *restrict stream, const int rank, const int *n, const int *restrict x) {
-    // TODO: Lump imprint, mmprint and zmprint together so only 1 method is needed to
-    //       print different types of matrices.
-    int m = 1;
+void mprint(FILE *restrict stream, const int rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x)) {
+    size_t m = 1;
 
     fprintf(stream, "%d\n", rank);
     for (int i = 0; i < rank; ++i) {
         m *= n[i];
-        fprintf(stream, "%d ", n[i]);
+        fprintf(stream, "%d ", (int) n[i]);
     }
     fprintf(stream, "\n");
 
-    for (int i = 0; i < m; ++i) {
-        fprintf(stream, "%d\n", x[i]);
+    for (size_t i = 0; i < m; ++i) {
+        (*print)(stream, x + i * size);
     }
 }
 
-void mmprint(FILE *restrict stream, const int rank, const int *n, const material_t *restrict x) {
-    int m = 1;
-
-    fprintf(stream, "%d\n", rank);
-    for (int i = 0; i < rank; ++i) {
-        m *= n[i];
-        fprintf(stream, "%d ", n[i]);
-    }
-    fprintf(stream, "\n");
-
-    for (int i = 0; i < m; ++i) {
-        material_t material = x[i];
-
-        fprintf(stream, "%.4f %.4f %.4f\n", material.epsilon_r, material.mu_r, material.sigma);
-    }
-}
-
-void zmprint(FILE *restrict stream, const int rank, const int *n, const double complex *restrict x) {
-    int m = 1;
-
-    fprintf(stream, "%d\n", rank);
-    for (int i = 0; i < rank; ++i) {
-        m *= n[i];
-        fprintf(stream, "%d ", n[i]);
-    }
-    fprintf(stream, "\n");
-
-    for (int i = 0; i < m; ++i) {
-        double re = creal(x[i]), im = cimag(x[i]);
-
-        fprintf(stream, "%6.4f%c%6.4fi\n", re, im > 0 ? '+' : '-', fabs(im));
-    }
-}
-
-void zfprint_nm(FILE *restrict stream, const int n, const int m, const double complex *restrict x) {
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < m; ++j) {
+void mprintf_nm(FILE *restrict stream, const size_t n, const size_t m, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x)) {
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = 0; j < m; ++j) {
             // (col_index * row_size + row_index)
-            int idx = i * m + j;
-            double re = creal(x[idx]), im = cimag(x[idx]);
+            size_t idx = i * m + j;
 
-            fprintf(stream, "%6.4f %c %6.4fi ", re, im > 0 ? '+' : '-', fabs(im));
+            (*print)(stream, x + idx * size);
         }
-        fprintf(stream, "\n");
     }
 }
 
-void zfprint_3d(FILE *restrict stream, const int n, const int m, const int o, const double complex *restrict x, const char *label) {
-    for (int i = 0; i < n; ++i) {
-        fprintf(stream, "%s(%d, :, :) = [\n", label, i);
-        zfprint_nm(stream, m, o, x + i*m*o);
+void mprintf_3d(FILE *restrict stream, const size_t n, const size_t m, const size_t o, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label) {
+    for (size_t i = 0; i < n; ++i) {
+        size_t idx = i*m*o;
+
+        fprintf(stream, "%s(%d, :, :) = [\n", label, (int) i);
+        mprintf_nm(stream, m, o, x + idx * size, size, (*print));
         fprintf(stream, "]\n");
     }
 }
 
-void zfprint_2d(FILE *restrict stream, const int n, const int m, const double complex *restrict x, const char *label) {
+void mprintf_2d(FILE *restrict stream, const size_t n, const size_t m, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label) {
     fprintf(stream, "%s = [\n", label);
-    zfprint_nm(stream, n, m, x);
+    mprintf_nm(stream, n, m, x, size, (*print));
     fprintf(stream, "]\n");
 }
 
-void zfprint_1d(FILE *restrict stream, const int n, const double complex *restrict x, const char *label) {
-    zfprint_2d(stream, n, 1, x, label);
+void mprintf_1d(FILE *restrict stream, const size_t n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label) {
+    mprintf_2d(stream, n, 1, x, size, (*print), label);
 }
 
-void zfprint(FILE *restrict stream, const int rank, const int *n, const double complex *restrict x, const char *label) {
-    switch(rank) {
+void mprintf(FILE *restrict stream, const int rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label) {
+    switch (rank) {
         case 3:
-            zfprint_3d(stream, n[0], n[1], n[2], x, label);
+            mprintf_3d(stream, n[0], n[1], n[2], x, size, (*print), label);
             break;
         case 2:
-            zfprint_2d(stream, n[0], n[1], x, label);
+            mprintf_2d(stream, n[0], n[1], x, size, (*print), label);
             break;
         case 1:
-            zfprint_1d(stream, n[0], x, label);
+            mprintf_1d(stream, n[0], x, size, (*print), label);
+            break;
         default:
             fprintf(stderr, "Error: rank not one of (1, 2, 3)!\n");
             fprintf(stderr, "\tDefaulting to rank = 1.");
-            int m = n[0];
+            size_t m = n[0];
             for (int i = 1; i < rank; ++i) {
                 m += n[i];
             }
-            zfprint_1d(stream, m, x, label);
+            mprintf_1d(stream, m, x, size, (*print), label);
     }
 }
 
-void zprint_3d(const int n, const int m, const int o, const double complex *restrict x, const char *label) {
-    zfprint_3d(stdout, n, m, o, x, label);
+inline void printi(FILE *restrict stream, const void *x) {
+    const int *i = x;
+
+    fprintf(stream, "%d\n", (*i));
 }
 
-void zprint_2d(const int n, const int m, const double complex *restrict x, const char *label) {
-    zfprint_2d(stdout, n, m, x, label);
+inline void printm(FILE *restrict stream, const void *x) {
+    const material_t *m = x;
+
+    fprintf(stream, "%.4f %.4f %.4f\n", (*m).epsilon_r, (*m).mu_r, (*m).sigma);
 }
 
-void zprint_1d(const int n, const double complex *restrict x, const char *label) {
-    zfprint_1d(stdout, n, x, label);
-}
+inline void printz(FILE *restrict stream, const void *x) {
+    const double complex *z = x;
 
-void zprint(const int rank, const int *n, const double complex *restrict x, const char *label) {
-    zfprint(stdout, rank, n, x, label);
+    double re = creal(*z), im = cimag(*z);
+    fprintf(stream, "%6.4f%c%6.4fi\n", re, im > 0 ? '+' : '-', fabs(im));
 }
