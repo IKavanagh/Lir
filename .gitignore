@@ -1,0 +1,16 @@
+# MacOS hidden files
+.DS_Store
+
+# Executables
+2D
+
+# Dependencies
+.deps/
+*.d
+
+# Objects
+objects/
+*.o
+
+# Sphinx build directory
+*/_build/
