@@ -21,8 +21,7 @@
    https://github.com/ThomasHabets/monotonic_clock
 */
 
-#ifndef MONOTONIC_CLOCK_H
-#define MONOTONIC_CLOCK_H
+#pragma once
 
 /**
  * Purpose
@@ -40,5 +39,3 @@
  * =============================================================================
  */
 double monotonic_clock(void);
-
-#endif /* MONOTONIC_CLOCK_H */

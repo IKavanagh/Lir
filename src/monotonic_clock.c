@@ -40,8 +40,8 @@
  * Purpose
  * =======
  *
- * Fall back clock using either gettimeofday() or time() to
- * return a value which can be used to time program execution.
+ * Fall back clock using either gettimeofday() or time() to return a value
+ * which can be used to time program execution.
  * 
  * Output
  * ======
@@ -49,7 +49,7 @@
  *          DOUBLE.
  *          A number of seconds.
  *
- * ============================================================
+ * =============================================================================
  */
 double monotonic_clock_fallback(void) {
 #ifdef __linux__
@@ -62,7 +62,6 @@ double monotonic_clock_fallback(void) {
 }
 
 double monotonic_clock(void) {
-  // TODO: Test Windows version
 #if defined (__posix__)
     struct timespec ts;
     if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
