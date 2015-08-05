@@ -1,5 +1,6 @@
-# MacOS hidden files
+# MacOS files
 .DS_Store
+*.dSYM/
 
 # Executables
 2D
