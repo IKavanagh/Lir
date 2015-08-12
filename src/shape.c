@@ -23,6 +23,8 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#include "matlib.h"
+
 int materials = 0;
 
 double x = 0.0, y = 0.0, z = 0.0;
@@ -39,7 +41,7 @@ int init_shape(const char *restrict filename, const double f, const int disc_per
     int ret_code = 0, region_count;
     region_t *regions;
 
-    if ((ret_code = read_description(filename, &regions, &region_count)) == 0) {
+    if ((ret_code = read_shape(filename, &regions, &region_count)) == 0) {
         ret_code = create_shape(f, disc_per_lambda, block_size, regions, region_count);
     }
 
@@ -49,6 +51,7 @@ int init_shape(const char *restrict filename, const double f, const int disc_per
 }
 
 int create_shape(const double f, const int disc_per_lambda, const int block_size, const region_t *restrict regions, const int region_count) {
+    int ret_code;
     double lambda0 = lambda(k(f, 1, 1, 0));
 
     n = (int) floor(x / (lambda0 / disc_per_lambda));
@@ -64,11 +67,9 @@ int create_shape(const double f, const int disc_per_lambda, const int block_size
     if (!shape) {
         free(shape); // Guard against memory leaks
     }
-    shape = calloc((size_t) n * (size_t) m, sizeof *shape);
-
-    if(!shape) {
-        fprintf(stderr, "Failed: Unable to allocate %lu bytes.\n", (unsigned long) n * (unsigned long) m * sizeof *shape);
-        return -1;
+    ret_code = calloc_s((void **) &shape, n * m, sizeof *shape);
+    if (ret_code != 0) {
+        return ret_code;
     }
 
     for (int k = 0; k < region_count; ++k) {
@@ -95,6 +96,86 @@ int create_shape(const double f, const int disc_per_lambda, const int block_size
                 shape[i * m + j] = region.material_id;
             }
         }
+    }
+
+    return 0;
+}
+
+int read_shape(const char *restrict filename, region_t **restrict regions, int *restrict region_count) {
+    int region_size = 4, count = 0, ret_code;
+
+    region_t *region;
+    ret_code = malloc_s((void **) &region, region_size * sizeof *region);
+    if (ret_code != 0) {
+        return ret_code;
+    }
+
+    if (materials == 0) {
+        if (!material) {
+            free(material);
+        }
+        ret_code = malloc_s((void **) &material, sizeof *material);
+        if (ret_code != 0) {
+            return ret_code;
+        }
+
+        material[0] = free_space(); // Free space
+        materials = 1;
+    }
+
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        fprintf(stderr, "%s: File or directory does not exist!", filename);
+        return 1;
+    }
+
+    int c; // int required to handle EOF
+    while ((c = fgetc(fp)) != EOF) {
+        if (c == '#') { // Comment skip to next line
+            while ((c = fgetc(fp)) != EOF && c != '\n');
+            c = fgetc(fp); // First character of next line
+        }
+
+        if (c == '(') { // Beginning of coordinate list
+            ret_code = ungetc(c, fp);
+            if (ret_code == EOF) {
+                fprintf(stderr, "ungetc(): Failed to put %c back into %s at line %d\n", c, __FILE__, __LINE__-6);
+                return 2;
+            }
+
+            ret_code = read_region(fp, &region[count]);
+            if (ret_code != 0) {
+                return ret_code;
+            }
+
+            count++;
+            if (count == region_size) {
+                region_size *= 2;
+
+                ret_code = realloc_s((void **) &region, region_size * sizeof *region);
+                if(ret_code != 0) {
+                    return ret_code;
+                }
+            }
+        }
+    }
+
+    x = xlim[1] - ylim[0];
+    y = ylim[1] - ylim[0];
+    z = zlim[1] - zlim[0];
+
+    region_t *r = *regions;
+    if (!r) {
+        free(r);
+    }
+    *regions = region;
+    *region_count = count;
+
+    if (ferror(fp)) {
+        fprintf(stderr, "fgetc(): Failed in %s at #%d\n", __FILE__, __LINE__-6);
+        return 2;
+    } else if (feof(fp)) {
+        fclose(fp);
     }
 
     return 0;
@@ -141,10 +222,10 @@ int read_region(FILE *restrict fp, region_t *restrict region) {
 
     if (material_id == -1) { // New material
         materials++;
-        material = realloc(material, (size_t) materials * sizeof *material);
-        if (!materials) {
-            fprintf(stderr, "Failed: Unable to allocate %lu bytes.\n", (unsigned long) materials * sizeof *material);
-            return -1;
+
+        int ret_code = realloc_s((void **) &material, materials * sizeof *material);
+        if (ret_code != 0) {
+            return ret_code;
         }
 
         material_id = materials - 1;
@@ -152,79 +233,6 @@ int read_region(FILE *restrict fp, region_t *restrict region) {
     }
 
     (*region).material_id = material_id;
-
-    return 0;
-}
-
-int read_description(const char *restrict filename, region_t **restrict regions, int *restrict region_count) {
-    int region_size = 4;
-
-    region_t *region = malloc((size_t) region_size * sizeof *region);
-    *region_count = 0;
-
-    if (materials == 0) {
-        if (!material) {
-            free(material);
-        }
-        material = malloc((size_t) 1 * sizeof *material);
-
-        material[0] = free_space(); // Free space
-        materials = 1;
-    }
-
-    FILE *fp = fopen(filename, "r");
-    if (!fp) {
-        fprintf(stderr, "%s: File or directory does not exist!", filename);
-        return 1;
-    }
-
-    int c; // int required to handle EOF
-    while ((c = fgetc(fp)) != EOF) {
-        if (c == '#') { // Comment skip to next line
-            while ((c = fgetc(fp)) != EOF && c != '\n');
-            c = fgetc(fp); // First character of next line
-        }
-
-        if (c == '(') { // Beginning of coordinate list
-            int ret_code = ungetc(c, fp);
-            if (ret_code == EOF) {
-                fprintf(stderr, "ungetc(): Failed to put %c back into %s at line %d\n", c, __FILE__, __LINE__-6);
-                return 2;
-            }
-
-            if ((ret_code = read_region(fp, &region[*region_count])) != 0) {
-                return ret_code;
-            }
-
-            (*region_count)++;
-            if (*region_count == region_size) {
-                region_size *= 2;
-
-                region = realloc(region, (size_t) region_size * sizeof *region);
-                if (!region) {
-                    fprintf(stderr, "Failed: Unable to allocate %lu bytes.\n", (unsigned long) region_size * sizeof *region);
-                    return -1;
-                }
-            }
-        }
-    }
-
-    x = xlim[1] - ylim[0];
-    y = ylim[1] - ylim[0];
-    z = zlim[1] - zlim[0];
-
-    region_t *r = *regions;
-    if (!r) {
-        free(r);
-    }
-    *regions = region;
-
-    if (ferror(fp)) {
-        fprintf(stderr, "fgetc(): Failed in %s at #%d\n", __FILE__, __LINE__-6);
-        return 2;
-    } else if (feof(fp)) {
-        fclose(fp);
-    }
 
     return 0;
 }

@@ -19,7 +19,7 @@
 int main(int argc, char **argv) {
     if (argc < 4) {
         fprintf(stderr, "Error: Wrong number of arguments!\n");
-        fprintf(stderr, "usage: %s f a_x a_y\n", argv[0]);
+        fprintf(stderr, "usage: %s f x y [file]\n", argv[0]);
         exit(4 - argc);
     }
 

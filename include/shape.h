@@ -212,9 +212,8 @@ int read_region(FILE *restrict fp, region_t *restrict region);
  * Purpose
  * =======
  *
- * Reads in an entire shape description from the file filename and stores each
- * region in the regions array and the number of regions read in into
- * region_count.
+ * Reads in an entire shape description from file and stores each region in the
+ * regions array and the number of regions read in into region_count.
  *
  * Arguments
  * =========
@@ -243,7 +242,7 @@ int read_region(FILE *restrict fp, region_t *restrict region);
  *
  * =============================================================================
  */
-int read_description(const char *restrict filename, region_t **restrict regions, int *restrict region_count);
+int read_shape(const char *restrict filename, region_t **restrict regions, int *restrict region_count);
 
 /**
  * Purpose
