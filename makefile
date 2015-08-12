@@ -32,29 +32,18 @@ else
 	LDLIBS += -L${MKLROOT}/lib -lmkl_intel_ilp64 -lmkl_core -lmkl_sequential -lpthread -lm
 endif
 
-# Name of archive file of source files
-ARCHIVE = vefie
-
-# Directory containing sphinx documentation
-DOCDIR = doc
-
-# Header and source file directories
-INCDIR = include
-SRCDIR = src
+# Paths to search for C source and header file
+vpath %.c src
+vpath %.h include
 
 DEPDIR = .deps
 OBJDIR = objects
 
-OUTDIR = output
-
-# List of '.c' source files in subdirectories
+# List of '.c' source files in all subdirectories recursively
 SRCS := $(notdir $(wildcard **/*.c))
 
 # Corresponding list of '.o' targets for '.c' source files
 OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.c,%.o, $(SRCS)))
-OBJS := $(filter-out objects/indoor.o, $(OBJS))
-
-.PHONY: clean clean-all clean-docs docs tar
 
 2D: 2D.c $(OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDFLAGS) $(OBJS) $(LOADLIBES) $(LDLIBS) -o $@
@@ -63,26 +52,21 @@ OBJS := $(filter-out objects/indoor.o, $(OBJS))
 
 all: docs 2D
 
+.PHONY: clean docs
+
 clean:
-	-rm -rf 2D *.d *.o $(OUTDIR)/* $(DEPDIR) $(OBJDIR) $(ARCHIVE).tar.gz
-
-clean-docs:
-	@make -C $(DOCDIR) clean
-
-clean-all: clean clean-docs
+	-rm -rf 2D $(DEPDIR) $(OBJDIR)
 
 docs:
-	@make -C $(DOCDIR) html
+	@make -C doc html
 
-tar: $(ARCHIVE).tar.gz
-
-# Order-only prerequisite, requires $(DEPDIR) is created before any dependencies are
+# Order-only prerequisite, requires $(DEPDIR) to be created before any dependencies are
 $(SRCS:%.c=$(DEPDIR)/%.d): | $(DEPDIR)
 
 $(DEPDIR):
 	mkdir $(DEPDIR)
 
-# Order-only prerequisite, requires $(OBJDIR) is created before any dependencies are
+# Order-only prerequisite, requires $(OBJDIR) to be created before any objects are
 $(OBJS): | $(OBJDIR)
 
 $(OBJDIR):
@@ -97,14 +81,7 @@ $(OBJDIR)/%.o: %.c
 	@-rm -f $(DEPDIR)/$*.d.part
 	@echo
 
-$(ARCHIVE).tar.gz: $(SRCS)
-	-tar -czf $(ARCHIVE).tar.gz *.c $(SRCDIR)/*.c
-
 # Only include dependency files if we need them
 ifeq (,$(filter $(MAKECMDGOALS),clean docs tar))
 -include $(SRCS:%.c=$(DEPDIR)/%.d)
 endif
-
-# Paths to search for C source and header file
-vpath %.c $(SRCDIR)
-vpath %.h $(INCDIR)
