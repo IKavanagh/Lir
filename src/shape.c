@@ -66,21 +66,27 @@ int create_shape(const double f, const int disc_per_lambda, const int block_size
 
     double dy = y / (double) m;
 
+    o = (int) floor (z / (lambda0 / disc_per_lambda));
+    o += block_size - o % block_size;
+
+    double dz = z / (double) o;
+
     if (!shape) {
         free(shape); // Guard against memory leaks
     }
-    int ret_code = calloc_s((void **) &shape, (size_t) (n*m), sizeof *shape);
+    int ret_code = calloc_s((void **) &shape, (size_t) (o*m*n), sizeof *shape);
     if (ret_code != 0) {
         return ret_code;
     }
 
-    for (int k = 0; k < region_count; ++k) {
-        region_t region = regions[k];
+    for (int l = 0; l < region_count; ++l) {
+        region_t region = regions[l];
 
-        int x_range[2] = {INT_MAX}, y_range[2] = {INT_MAX};
+        int x_range[2] = {INT_MAX}, y_range[2] = {INT_MAX}, z_range[2] = {INT_MAX};
 
         x_range[1] = 0;
         y_range[1] = 0;
+        z_range[1] = 0;
 
         for (int i = 0; i < 4; ++i) {
             int Nx = (int) round ((region.vertex[i].x - xlim[0]) / dx);
@@ -91,11 +97,22 @@ int create_shape(const double f, const int disc_per_lambda, const int block_size
 
             y_range[0] = min(y_range[0], My);
             y_range[1] = max(y_range[1], My);
+
+            // z must be treated differently as its given in a base coordinate
+            // and a height
+            int Oz = (int) round ((region.vertex[i].z - zlim[0]) / dz);
+            z_range[0] = min(z_range[0], Oz);
+
+            Oz = (int) round ((region.height - zlim[0]) / dz);
+            z_range[1] = max(z_range[1], Oz);
         }
 
-        for (int j = y_range[0]; j < y_range[1]; ++j) {
-            for (int i = x_range[0]; i < x_range[1]; ++i) {
-                shape[j * n + i] = region.material_id;
+        for (int k = z_range[0]; k < z_range[1]; ++k) {
+            for (int j = y_range[0]; j < y_range[1]; ++j) {
+                for (int i = x_range[0]; i < x_range[1]; ++i) {
+                    int idx = (k * m + j) * n + i;
+                    shape[idx] = region.material_id;
+                }
             }
         }
     }
