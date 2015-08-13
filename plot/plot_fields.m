@@ -20,10 +20,6 @@ if (N ~= Ns(1) && M ~= Ns(2) && N*M ~= Ne)
     error('Dimensions of matrices do not match!');
 end
 
-% Necessary because C code spits shape out rotated... Needs to be fixed!
-shape = rot90(shape);
-shape = flipud(shape);
-
 Et = reshape(E, N, M);
 Ea = 20.0*log10(abs(Et / max(Et(:))));
 
