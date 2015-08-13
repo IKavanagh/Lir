@@ -99,5 +99,7 @@ double monotonic_clock(void) {
     }
 
     return (double) count.QuadPart / scaling_factor;
+#else
+    return monotonic_clock_fallback();
 #endif
 }
