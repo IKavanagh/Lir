@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 
     t = monotonic_clock() - t;
 
-    printf("Initialised VEFIE elements for a problem size of %lu in %.4f seconds.\n", n*m, t);
+    printf("Initialised VEFIE elements for a problem size of %d in %.4f seconds.\n", n*m, t);
 
     int iter = 1000, N = n*m, info;
     double resid = 1e-3;

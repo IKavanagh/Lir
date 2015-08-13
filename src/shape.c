@@ -79,8 +79,8 @@ int create_shape(const double f, const int disc_per_lambda, const int block_size
 
         int x_range[2] = {INT_MAX}, y_range[2] = {INT_MAX};
 
-        x_range[0] = 0;
-        y_range[0] = 0;
+        x_range[1] = 0;
+        y_range[1] = 0;
 
         for (int i = 0; i < 4; ++i) {
             int Nx = (int) round ((region.vertex[i].x - xlim[0]) / dx);
@@ -93,9 +93,9 @@ int create_shape(const double f, const int disc_per_lambda, const int block_size
             y_range[1] = max(y_range[1], My);
         }
 
-        for (int i = x_range[0]; i < x_range[1]; ++i) {
-            for (int j = y_range[0]; j < y_range[1]; ++j) {
-                shape[i * m + j] = region.material_id;
+        for (int j = y_range[0]; j < y_range[1]; ++j) {
+            for (int i = x_range[0]; i < x_range[1]; ++i) {
+                shape[j * n + i] = region.material_id;
             }
         }
     }
