@@ -246,7 +246,7 @@ double complex h2n(int n, double x);
  *
  * =============================================================================
  */
-double complex k(double f, double epsilonr, double mur, double sigma);
+double complex kd(double f, double epsilonr, double mur, double sigma);
 
 /**
  * Purpose

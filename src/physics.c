@@ -47,7 +47,7 @@ inline double complex h2n(int n, double x) {
     return jn(n, x) - yn(n, x)*I;
 }
 
-double complex k(double f, double epsilonr, double mur, double sigma) {
+double complex kd(double f, double epsilonr, double mur, double sigma) {
     double omega = 2.0 * M_PI * f;
     double mu = mur * (4.0 * M_PI * 1e-7);
     double epsilon = epsilonr * 8.854e-12;
