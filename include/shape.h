@@ -51,7 +51,7 @@ extern double xlim[2], ylim[2], zlim[2];
  *
  * =============================================================================
  */
-extern size_t n, m, o;
+extern int n, m, o;
 
 /**
  * Purpose
@@ -71,7 +71,7 @@ extern int *shape;
  *
  * =============================================================================
  */
-size_t materials;
+int materials;
 
 /**
  * Purpose
@@ -173,7 +173,7 @@ int init_shape(const char *restrict filename, const double f, const int disc_per
  *
  * =============================================================================
  */
-int create_shape(const double f, const int disc_per_lambda, const int block_size, const region_t *restrict regions, const size_t region_count);
+int create_shape(const double f, const int disc_per_lambda, const int block_size, const region_t *restrict regions, const int region_count);
 
 /**
  * Purpose
@@ -242,7 +242,7 @@ int read_region(FILE *restrict fp, region_t *restrict region);
  *
  * =============================================================================
  */
-int read_shape(const char *restrict filename, region_t **restrict regions, size_t *restrict region_count);
+int read_shape(const char *restrict filename, region_t **restrict regions, int *restrict region_count);
 
 /**
  * Purpose

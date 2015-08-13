@@ -11,7 +11,8 @@ int calloc_s(void **ptr, size_t nelem, size_t elsize) {
 }
 
 int malloc_s(void **ptr, size_t size) {
-    return realloc_s(ptr, size);
+    *ptr = malloc(size);
+    return aerror(*ptr, size);
 }
 
 int realloc_s(void **ptr, size_t size) {

@@ -23,8 +23,6 @@ int main(int argc, char **argv) {
         exit(4 - argc);
     }
 
-    int err = 0;
-
     const char *filename = "input/building.txt";
     double f = atof(argv[1]);
     double complex antenna = atof(argv[2]) + I*atof(argv[3]);
@@ -35,23 +33,25 @@ int main(int argc, char **argv) {
 
     double t = monotonic_clock();
 
-    if ((err = init_shape(filename, f, 10, block_size)) ||
-        (err = init_vefie(f, antenna, hertzian_dipole))) {
-        exit(err);
+    int ret_code = init_shape(filename, f, 10, block_size);
+    if (ret_code == 0) {
+        ret_code = init_vefie(f, antenna, hertzian_dipole);
+        if (ret_code != 0) {
+            return ret_code;
+        }
     }
 
     t = monotonic_clock() - t;
 
     printf("Initialised VEFIE elements for a problem size of %lu in %.4f seconds.\n", n*m, t);
 
-    int iter = 1000, info;
-    size_t N = n*m;
+    int iter = 1000, N = n*m, info;
     double resid = 1e-3;
 
-    double complex *work = mkl_malloc(N * 9 * sizeof *work, alignment);
+    double complex *work = mkl_malloc((size_t) N * 9 * sizeof *work, alignment);
 
     t = monotonic_clock();
-    info = rbicgstab((int) N, V, E, work, (int) N, &iter, &resid, matvec, no_pre, rfo);
+    info = rbicgstab(N, V, E, work, N, &iter, &resid, matvec, no_pre, rfo);
     t = monotonic_clock() - t;
 
     iprint(info, iter, t);
@@ -60,49 +60,49 @@ int main(int argc, char **argv) {
         size_t dimensions[2] = {1};
 
         fp = fopen("output/E.txt", "w");
-        dimensions[0] = N;
+        dimensions[0] = (size_t) N;
         dimensions[1] = 1;
         mprint(fp, 2, dimensions, E, sizeof *E, printz);
         fclose(fp);
 
         fp = fopen("output/position.txt", "w");
-        dimensions[0] = n;
-        dimensions[1] = m;
+        dimensions[0] = (size_t) n;
+        dimensions[1] = (size_t) m;
         mprint(fp, 2, dimensions, p, sizeof *p, printz);
         fclose(fp);
 
         fp = fopen("output/shape.txt", "w");
-        dimensions[0] = n;
-        dimensions[1] = m;
+        dimensions[0] = (size_t) n;
+        dimensions[1] = (size_t) m;
         mprint(fp, 2, dimensions, shape, sizeof *shape, printi);
         fclose(fp);
 
         fp = fopen("output/material.txt", "w");
-        dimensions[0] = materials;
+        dimensions[0] = (size_t) materials;
         dimensions[1] = 1;
         mprint(fp, 2, dimensions, material, sizeof *material, printm);
         fclose(fp);
 
         fp = fopen("output/D.txt", "w");
-        dimensions[0] = N;
+        dimensions[0] = (size_t) N;
         dimensions[1] = 1;
         mprint(fp, 2, dimensions, D, sizeof *D, printz);
         fclose(fp);
 
         fp = fopen("output/G.txt", "w");
-        dimensions[0] = N;
+        dimensions[0] = (size_t) N;
         dimensions[1] = 1;
         mprint(fp, 2, dimensions, G, sizeof *G, printz);
         fclose(fp);
 
         fp = fopen("output/V.txt", "w");
-        dimensions[0] = N;
+        dimensions[0] = (size_t) N;
         dimensions[1] = 1;
         mprint(fp, 2, dimensions, V, sizeof *V, printz);
         fclose(fp);
 
         fp = fopen("output/rfo.txt", "w");
-        dimensions[0] = N;
+        dimensions[0] = (size_t) N;
         dimensions[1] = 1;
         mprint(fp, 2, dimensions, rfo, sizeof *rfo, printz);
         fclose(fp);

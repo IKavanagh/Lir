@@ -21,12 +21,12 @@
 
 #define _GNU_SOURCE // Required to enable special math functions (jn and yn)
 
-inline size_t min(size_t a, size_t b) {
+inline int min(int a, int b) {
     if (b < a) return b;
     return a;
 }
 
-inline size_t max(size_t a, size_t b) {
+inline int max(int a, int b) {
     if (b > a) return b;
     return a;
 }

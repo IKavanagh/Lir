@@ -20,7 +20,6 @@
 
 #include <complex.h>
 #include <math.h>
-#include <stddef.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -95,7 +94,7 @@ typedef struct {
  *
  * =============================================================================
  */
-size_t min(size_t a, size_t b);
+int min(int a, int b);
 
 /**
  * Purpose
@@ -120,7 +119,7 @@ size_t min(size_t a, size_t b);
  *
  * =============================================================================
  */
-size_t max(size_t a, size_t b);
+int max(int a, int b);
 
 /**
  * Purpose
