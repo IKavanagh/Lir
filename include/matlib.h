@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <complex.h>
+#include <fftw3.h>
 #include <stddef.h>
 
 int calloc_s(void **ptr, size_t nelem, size_t elsize);
@@ -25,3 +27,5 @@ int calloc_s(void **ptr, size_t nelem, size_t elsize);
 int malloc_s(void **ptr, size_t size);
 
 int realloc_s(void **ptr, size_t new_size);
+
+int fftw_malloc_s(fftw_complex **ptr, size_t size);

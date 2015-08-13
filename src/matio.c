@@ -18,13 +18,13 @@
 
 #include "matio.h"
 
-void mprint(FILE *restrict stream, const int rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x)) {
+void mprint(FILE *restrict stream, const size_t rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x)) {
     size_t m = 1;
 
-    fprintf(stream, "%d\n", rank);
-    for (int i = 0; i < rank; ++i) {
+    fprintf(stream, "%lu\n", rank);
+    for (size_t i = 0; i < rank; ++i) {
         m *= n[i];
-        fprintf(stream, "%d ", (int) n[i]);
+        fprintf(stream, "%lu ", n[i]);
     }
     fprintf(stream, "\n");
 
@@ -33,30 +33,29 @@ void mprint(FILE *restrict stream, const int rank, const size_t *n, const void *
     }
 }
 
-void mprintf_nm(FILE *restrict stream, const size_t n, const size_t m, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x)) {
-    for (size_t i = 0; i < n; ++i) {
-        for (size_t j = 0; j < m; ++j) {
-            // (col_index * row_size + row_index)
-            size_t idx = i * m + j;
+void mprintf_nm(FILE *restrict stream, const size_t m, const size_t n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x)) {
+    for (size_t j = 0; j < m; ++j) {
+        for (size_t i = 0; i < n; ++i) {
+            size_t idx = j * n + i;
 
             (*print)(stream, x + idx * size);
         }
     }
 }
 
-void mprintf_3d(FILE *restrict stream, const size_t n, const size_t m, const size_t o, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label) {
-    for (size_t i = 0; i < n; ++i) {
-        size_t idx = i*m*o;
+void mprintf_3d(FILE *restrict stream, const size_t o, const size_t m, const size_t n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label) {
+    for (size_t k = 0; k < o; ++k) {
+        size_t idx = k*m*n;
 
-        fprintf(stream, "%s(%d, :, :) = [\n", label, (int) i);
-        mprintf_nm(stream, m, o, x + idx * size, size, (*print));
+        fprintf(stream, "%s(%lu, :, :) = [\n", label, k);
+        mprintf_nm(stream, m, n, x + idx * size, size, (*print));
         fprintf(stream, "]\n");
     }
 }
 
-void mprintf_2d(FILE *restrict stream, const size_t n, const size_t m, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label) {
+void mprintf_2d(FILE *restrict stream, const size_t m, const size_t n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label) {
     fprintf(stream, "%s = [\n", label);
-    mprintf_nm(stream, n, m, x, size, (*print));
+    mprintf_nm(stream, m, n, x, size, (*print));
     fprintf(stream, "]\n");
 }
 
@@ -64,7 +63,7 @@ void mprintf_1d(FILE *restrict stream, const size_t n, const void *restrict x, c
     mprintf_2d(stream, n, 1, x, size, (*print), label);
 }
 
-void mprintf(FILE *restrict stream, const int rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label) {
+void mprintf(FILE *restrict stream, const size_t rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label) {
     switch (rank) {
         case 3:
             mprintf_3d(stream, n[0], n[1], n[2], x, size, (*print), label);
@@ -79,7 +78,7 @@ void mprintf(FILE *restrict stream, const int rank, const size_t *n, const void 
             fprintf(stderr, "Error: rank not one of (1, 2, 3)!\n");
             fprintf(stderr, "\tDefaulting to rank = 1.");
             size_t m = n[0];
-            for (int i = 1; i < rank; ++i) {
+            for (size_t i = 1; i < rank; ++i) {
                 m += n[i];
             }
             mprintf_1d(stream, m, x, size, (*print), label);

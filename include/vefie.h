@@ -172,7 +172,7 @@ int init_fftw(void);
  *
  * =============================================================================
  */
-void toeplitz(double complex** restrict x);
+int toeplitz(double complex** restrict x);
 
 /**
  * Purpose

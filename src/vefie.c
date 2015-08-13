@@ -29,6 +29,7 @@ int omp_get_num_threads(void) { return 1; }
 int omp_get_max_threads(void) { return 1; }
 #endif
 
+#include "matlib.h"
 #include "physics.h"
 #include "shape.h"
 
@@ -102,55 +103,51 @@ int init_vefie(const double f, const double complex antenna, double complex (*in
     #pragma omp master
     printf("Running VEFIE with %d threads for a shape of size %.2fm x %.2fm with a source radiating at %.2f%s positioned at (%.2f,%.2f).\n", omp_get_num_threads(), x, y, f / (strcmp(unit, "MHz") == 0 ? 1e6 : strcmp(unit, "GHz") == 0 ? 1e9 : 1), unit, creal(antenna), cimag(antenna));
 
-    double dx = x / n, dy = y / m, a = sqrt(dx * dy / M_PI);
+    double dx = x / (double) n, dy = y / (double) m, a = sqrt(dx * dy / M_PI);
 
-    double k0 = creal(k(f, 1, 1, 0));
+    double k0 = creal(kd(f, 1, 1, 0));
 
     #pragma omp parallel for
-    for (int l = 0; l < n*m; ++l) {
-        int i = l % m;
-        int j = l / m;
+    for (size_t k = 0; k < n*m; ++k) {
+        size_t i = k % m;
+        size_t j = k / m;
 
         // Define position as centre of each cube
-        p[l] = (xlim[0] + I*ylim[0]) + ((i + 0.5)*dx + I*(j + 0.5)*dy);
+        p[k] = (xlim[0] + I*ylim[0]) + (((double) i + 0.5)*dx + I*((double) j + 0.5)*dy);
 
-        V[l] = (*inc)(k0, antenna, p[l]);
+        V[k] = (*inc)(k0, antenna, p[k]);
 
         material_t mat = material[shape[j + m * i]];
-        double complex kd = k(f, mat.epsilon_r, mat.mu_r, mat.sigma);
+        double complex km = kd(f, mat.epsilon_r, mat.mu_r, mat.sigma);
 
-        D[l] = kd*kd - k0*k0;
-        if (cabs(D[l]) > 1e-15) {
-            rfo[l] = 1.0;
+        D[k] = km*km - k0*k0;
+        if (cabs(D[k]) > 1e-15) {
+            rfo[k] = 1.0;
         }
 
-        double Rmn = cabs(p[0] - p[l]);
-        G[l] = (I / 4) * (((2*M_PI*a) / k0) * j1(k0*a) * h2n(0, k0*Rmn));
+        double Rmn = cabs(p[0] - p[k]);
+        G[k] = (I / 4) * (((2*M_PI*a) / k0) * j1(k0*a) * h2n(0, k0*Rmn));
     }
     G[0] = (I / 4) * (((2*M_PI*a) / k0) * h2n(1, k0*a) - 4*I / (k0*k0));
 
-    toeplitz(&G); // Extend G to size 2N * 2M and take FFT
-
-    return 0;
+    return toeplitz(&G); // Extend G to size 2N * 2M and take FFT
 }
 
 int init_fftw(void) {
-    dims[0] = 2*n;
-    dims[1] = 2*m;
-    dims[2] = 2*o;
+    dims[0] = 2 * (int) n;
+    dims[1] = 2 * (int) m;
+    dims[2] = 2 * (int) o;
 
     size_t N = (size_t) dims[0] * (size_t) dims[1];
 
-    in = fftw_malloc(N * sizeof *in);
-    if (!in) {
-        fprintf(stderr, "Failed: Unable to allocate %lu bytes.\n", (long unsigned) n * (long unsigned) m * sizeof *in);
-        return -1;
+    int ret_code = fftw_malloc_s(&in, N * sizeof *in);
+    if (ret_code != 0) {
+        return ret_code;
     }
 
-    out = fftw_malloc(N * sizeof *out);
-    if (!out) {
-        fprintf(stderr, "Failed: Unable to allocate %lu bytes.\n", (long unsigned) n * (long unsigned) m * sizeof *out);
-        return -1;
+    ret_code = fftw_malloc_s(&in, N * sizeof *out);
+    if (ret_code != 0) {
+        return ret_code;
     }
 
     forward_plan = fftw_plan_dft(2, dims, in, out, FFTW_FORWARD, FFTW_MEASURE);
@@ -164,7 +161,7 @@ int init_fftw(void) {
     return 0;
 }
 
-void toeplitz(double complex** restrict X) {
+int toeplitz(double complex** restrict X) {
     // TODO: Fix when compiling with gcc
     //       * Produces a different result (appears to be less accurate)
     //       * Could depend on which library is being used for the FFT
@@ -173,31 +170,37 @@ void toeplitz(double complex** restrict X) {
     //       * between compiler
     double complex* Y = *X;
 
-    double complex* Z = mkl_malloc((size_t) dims[0]* (size_t) dims[1] * sizeof *Z, alignment);
+    double complex *Z;
+    int ret_code = fftw_malloc_s(&Z, (size_t) dims[0] * (size_t) dims[1] * sizeof *Z);
+    if (ret_code != 0) {
+        // TODO: Document possible return code
+        return ret_code;
+    }
+
     fftw_plan plan = fftw_plan_dft(2, dims, Z, Z, FFTW_FORWARD, FFTW_ESTIMATE);
 
     // Embed Y into a circular convolution problem of size 2Nx2M
     #pragma omp parallel for
-    for (int k = 0; k < n*m; ++k) {
-        int i = k / m; // Row
-        int j = k % m; // Column
+    for (size_t k = 0; k < n*m; ++k) {
+        size_t i = k / m; // Row
+        size_t j = k % m; // Column
 
-        Z[i * dims[1] + j] = Y[i * m + j]; // Top left
+        Z[i * (size_t) dims[1] + j] = Y[i * m + j]; // Top left
         if (j == 0) {
-            Z[i * dims[1] + (j + m)] = 0.0; // Top right
+            Z[i * (size_t) dims[1] + (j + m)] = 0.0; // Top right
         } else {
-            Z[i * dims[1] + (j + m)] = Y[(i + 1) * m - j]; // Top right
+            Z[i * (size_t) dims[1] + (j + m)] = Y[(i + 1) * m - j]; // Top right
         }
 
         if (i == 0) {
-            Z[(i + m) * dims[1] + j] = 0.0; // Bottom left
-            Z[(i + m) * dims[1] + (j + m)] = 0.0; // Bottom right
+            Z[(i + m) * (size_t) dims[1] + j] = 0.0; // Bottom left
+            Z[(i + m) * (size_t) dims[1] + (j + m)] = 0.0; // Bottom right
         } else {
-            Z[(i + m) * dims[1] + j] = Y[(m - i) * m + j]; // Bottom left
+            Z[(i + m) * (size_t) dims[1] + j] = Y[(m - i) * m + j]; // Bottom left
             if (j == 0) {
-                Z[(i + m) * dims[1] + (j + m)] = 0.0; // Bottom right
+                Z[(i + m) * (size_t) dims[1] + (j + m)] = 0.0; // Bottom right
             } else {
-                Z[(i + m) * dims[1] + (j + m)] = Y[(m + 1 - i) * m - j]; // Bottom right
+                Z[(i + m) * (size_t) dims[1] + (j + m)] = Y[(m + 1 - i) * m - j]; // Bottom right
             }
         }
     }
@@ -209,6 +212,8 @@ void toeplitz(double complex** restrict X) {
 
     fftw_destroy_plan(plan);
     fftw_cleanup();
+
+    return 0;
 }
 
 void matvec(const double complex *restrict alpha, const double complex *restrict X, const double complex *restrict beta, double complex *restrict Y) {
@@ -219,31 +224,31 @@ void matvec(const double complex *restrict alpha, const double complex *restrict
     //       * Other likely option, use of #pragma omp parallel for varies
     //       * between compiler
     #pragma omp parallel for
-    for (int k = 0; k < n*m; ++k) {
-        int i = k / m;
-        int j = k % m;
+    for (size_t k = 0; k < n*m; ++k) {
+        size_t i = k / m;
+        size_t j = k % m;
 
-        in[i * dims[1] + j] = D[i * m + j] * X[i * m + j];
-        in[i * dims[1] + (j + m)] = 0.0;
-        in[(i + m) * dims[1] + j] = 0.0;
-        in[(i + m) * dims[1] + (j + m)] = 0.0;
+        in[i * (size_t) dims[1] + j] = D[i * m + j] * X[i * m + j];
+        in[i * (size_t) dims[1] + (j + m)] = 0.0;
+        in[(i + m) * (size_t) dims[1] + j] = 0.0;
+        in[(i + m) * (size_t) dims[1] + (j + m)] = 0.0;
     }
 
     fftw_execute(forward_plan);
 
     #pragma omp parallel for
-    for (int k = 0; k < dims[0]*dims[1]; ++k) {
+    for (size_t k = 0; k < (size_t) dims[0] * (size_t) dims[1]; ++k) {
         in[k] = G[k] * out[k];
     }
 
     fftw_execute(backward_plan);
 
     #pragma omp parallel for
-    for (int k = 0; k < n*m; ++k) {
-        int i = k / m;
-        int j = k % m;
+    for (size_t k = 0; k < n*m; ++k) {
+        size_t i = k / m;
+        size_t j = k % m;
 
-        Y[k] = *alpha * (X[k] + (out[i * dims[1] + j] / (dims[0]*dims[1]))) + *beta*Y[k];
+        Y[k] = *alpha * (X[k] + (out[i * (size_t) dims[1] + j] / (dims[0]*dims[1]))) + *beta*Y[k];
     }
 }
 

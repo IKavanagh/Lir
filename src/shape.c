@@ -22,23 +22,26 @@
 #include <float.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "matlib.h"
 
-int materials = 0;
-
 double x = 0.0, y = 0.0, z = 0.0;
-int n = 0, m = 0, o = 0;
+size_t n = 0, m = 0, o = 0;
 
 double xlim[2] = {DBL_MAX, -DBL_MAX};
 double ylim[2] = {DBL_MAX, -DBL_MAX};
 double zlim[2] = {DBL_MAX, -DBL_MAX};
 
+size_t materials = 0;
+
 int *shape = NULL;
 material_t *material = NULL;
 
 int init_shape(const char *restrict filename, const double f, const int disc_per_lambda, const int block_size) {
-    int ret_code = 0, region_count;
+    // TODO: Add error checking
+    int ret_code = 0;
+    size_t region_count;
     region_t *regions;
 
     if ((ret_code = read_shape(filename, &regions, &region_count)) == 0) {
@@ -50,39 +53,38 @@ int init_shape(const char *restrict filename, const double f, const int disc_per
     return ret_code;
 }
 
-int create_shape(const double f, const int disc_per_lambda, const int block_size, const region_t *restrict regions, const int region_count) {
-    int ret_code;
-    double lambda0 = lambda(k(f, 1, 1, 0));
+int create_shape(const double f, const int disc_per_lambda, const int block_size, const region_t *restrict regions, const size_t region_count) {
+    double lambda0 = lambda(kd(f, 1, 1, 0));
 
-    n = (int) floor(x / (lambda0 / disc_per_lambda));
-    n += block_size - n % block_size;
+    n = (size_t) floor(x / (lambda0 / disc_per_lambda));
+    n += (size_t) block_size - n % (size_t) block_size;
 
-    double dx = x / n;
+    double dx = x / (double) n;
 
-    m = (int) floor(y / (lambda0 / disc_per_lambda));
-    m += block_size - m % block_size;
+    m = (size_t) floor(y / (lambda0 / disc_per_lambda));
+    m += (size_t) block_size - m % (size_t) block_size;
 
-    double dy = y / m;
+    double dy = y / (double) m;
 
     if (!shape) {
         free(shape); // Guard against memory leaks
     }
-    ret_code = calloc_s((void **) &shape, n * m, sizeof *shape);
+    int ret_code = calloc_s((void **) &shape, n * m, sizeof *shape);
     if (ret_code != 0) {
         return ret_code;
     }
 
-    for (int k = 0; k < region_count; ++k) {
+    for (size_t k = 0; k < region_count; ++k) {
         region_t region = regions[k];
 
-        int x_range[2] = {-INT_MAX}, y_range[2] = {-INT_MAX};
+        size_t x_range[2] = {SIZE_MAX}, y_range[2] = {SIZE_MAX};
 
-        x_range[0] = INT_MAX;
-        y_range[0] = INT_MAX;
+        x_range[0] = 0;
+        y_range[0] = 0;
 
-        for (int i = 0; i < 4; ++i) {
-            int Nx = (int) round((region.vertex[i].x - xlim[0]) / dx);
-            int My = (int) round((region.vertex[i].y - ylim[0]) / dy);
+        for (size_t i = 0; i < 4; ++i) {
+            size_t Nx = (size_t) round((region.vertex[i].x - xlim[0]) / dx);
+            size_t My = (size_t) round((region.vertex[i].y - ylim[0]) / dy);
 
             x_range[0] = min(x_range[0], Nx);
             x_range[1] = max(x_range[1], Nx);
@@ -91,8 +93,8 @@ int create_shape(const double f, const int disc_per_lambda, const int block_size
             y_range[1] = max(y_range[1], My);
         }
 
-        for (int i = x_range[0]; i < x_range[1]; ++i) {
-            for (int j = y_range[0]; j < y_range[1]; ++j) {
+        for (size_t i = x_range[0]; i < x_range[1]; ++i) {
+            for (size_t j = y_range[0]; j < y_range[1]; ++j) {
                 shape[i * m + j] = region.material_id;
             }
         }
@@ -101,11 +103,11 @@ int create_shape(const double f, const int disc_per_lambda, const int block_size
     return 0;
 }
 
-int read_shape(const char *restrict filename, region_t **restrict regions, int *restrict region_count) {
-    int region_size = 4, count = 0, ret_code;
+int read_shape(const char *restrict filename, region_t **restrict regions, size_t *restrict region_count) {
+    size_t region_size = 4, count = 0;
 
     region_t *region;
-    ret_code = malloc_s((void **) &region, region_size * sizeof *region);
+    int ret_code = malloc_s((void **) &region, region_size * sizeof *region);
     if (ret_code != 0) {
         return ret_code;
     }
@@ -184,7 +186,7 @@ int read_shape(const char *restrict filename, region_t **restrict regions, int *
 int read_region(FILE *restrict fp, region_t *restrict region) {
     double height = 0;
     point_t p;
-    for (int i = 0; i < 4; ++i) {
+    for (size_t i = 0; i < 4; ++i) {
         if(fscanf(fp, "(%lf, %lf, %lf) ", &p.x, &p.y, &p.z) == EOF) {
             fprintf(stderr, "fscanf(): Failed to read coordinates from %s at line %d\n", __FILE__, __LINE__-6);
             return 2;
@@ -214,9 +216,9 @@ int read_region(FILE *restrict fp, region_t *restrict region) {
     }
 
     int material_id = -1;
-    for (int i = 0; i < materials && material_id == -1; ++i) {
+    for (size_t i = 0; i < materials && material_id == -1; ++i) {
         if (matcmp(mat, material[i])) {
-            material_id = i;
+            material_id = (int) i;
         }
     }
 
@@ -228,7 +230,7 @@ int read_region(FILE *restrict fp, region_t *restrict region) {
             return ret_code;
         }
 
-        material_id = materials - 1;
+        material_id = (int) materials - 1;
         material[materials - 1] = mat;
     }
 

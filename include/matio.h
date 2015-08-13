@@ -61,7 +61,7 @@
  *
  * =============================================================================
  */
-void mprint(FILE *restrict stream, const int rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x));
+void mprint(FILE *restrict stream, const size_t rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x));
 
 /**
  * Purpose
@@ -102,7 +102,7 @@ void mprint(FILE *restrict stream, const int rank, const size_t *n, const void *
  *
  * =============================================================================
  */
-void mprintf_3d(FILE *restrict stream, const size_t n, const size_t m, const size_t o, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label);
+void mprintf_3d(FILE *restrict stream, const size_t o, const size_t m, const size_t n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label);
 
 /**
  * Purpose
@@ -140,7 +140,7 @@ void mprintf_3d(FILE *restrict stream, const size_t n, const size_t m, const siz
  *
  * =============================================================================
  */
-void mprintf_2d(FILE *restrict stream, const size_t n, const size_t m, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label);
+void mprintf_2d(FILE *restrict stream, const size_t m, const size_t n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label);
 
 /**
  * Purpose
@@ -215,7 +215,7 @@ void mprintf_1d(FILE *restrict stream, const size_t n, const void *restrict x, c
  *
  * =============================================================================
  */
-void mprintf(FILE *restrict stream, const int rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label);
+void mprintf(FILE *restrict stream, const size_t rank, const size_t *n, const void *restrict x, const size_t size, void (*print)(FILE *restrict stream, const void *x), const char *label);
 
 /**
  * Purpose
