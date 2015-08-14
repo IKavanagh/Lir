@@ -39,6 +39,8 @@ vpath %.h include
 DEPDIR = .deps
 OBJDIR = objects
 
+OUTDIR = output
+
 # List of '.c' source files in all subdirectories recursively
 SRCS := $(notdir $(wildcard **/*.c))
 
@@ -55,7 +57,7 @@ all: docs 2D
 .PHONY: clean docs
 
 clean:
-	-rm -rf 2D $(DEPDIR) $(OBJDIR)
+	-rm -rf 2D $(DEPDIR) $(OBJDIR) $(OUTDIR)/*
 
 docs:
 	@make -C doc html

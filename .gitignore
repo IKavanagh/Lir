@@ -2,19 +2,21 @@
 .DS_Store
 *.dSYM/
 
-# Executables
-2D
-
-# Dependencies
+# C #
+## Dependencies ##
 .deps/
 *.d
 
-# Objects
+## Objects ##
 objects/
 *.o
 
-# Output
-output/*
+## Output ##
+output/*.txt
 
-# Sphinx build directory
-*/_build/
+## Executables ##
+2D
+
+# Sphinx #
+## Build Directory ##
+_build/*
