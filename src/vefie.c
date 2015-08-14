@@ -33,8 +33,6 @@ int omp_get_max_threads(void) { return 1; }
 #include "physics.h"
 #include "shape.h"
 
-int alignment = 16;
-
 /**
  * Purpose
  * =======
@@ -75,6 +73,7 @@ double complex *rfo;
 int block_size = 20;
 
 int init_vefie(const double f, const double complex antenna, double complex (*inc)(const double k0, const double complex antenna, const double complex point)) {
+    // TODO: Document possible return values
     int ret_code;
     if (omp_get_max_threads() != 1 && fftw_init_threads()) {
         omp_set_num_threads(omp_get_max_threads());
@@ -82,12 +81,18 @@ int init_vefie(const double f, const double complex antenna, double complex (*in
     } else {
         fprintf(stderr, "Warning: fftw_init_threads() failed!\n");
     }
+
+    if (f < 0) {
+        return -10;
+    }
     
-    if ((ret_code = allocate_matrices()) != 0) {
+    ret_code = allocate_matrices();
+    if (ret_code != 0) {
         return ret_code;
     }
     
-    if ((ret_code = init_fftw()) != 0) {
+    ret_code = init_fftw();
+    if (ret_code != 0) {
         return ret_code;
     }
 
@@ -136,7 +141,6 @@ int init_vefie(const double f, const double complex antenna, double complex (*in
 int init_fftw(void) {
     dims[0] = 2*n;
     dims[1] = 2*m;
-    dims[2] = 2*o;
 
     int N = dims[0] * dims[1];
 
@@ -253,32 +257,35 @@ void matvec(const double complex *restrict alpha, const double complex *restrict
 }
 
 int allocate_matrices(void) {
-    int ret_code;
     size_t N = (size_t) (n*m);
 
-    if ((ret_code = matalloc(N, 0, &D)) != 0) {
-        return ret_code;
-    }
-    
-    G = fftw_malloc(N * sizeof *G);
-    if (!G) {
-        fprintf(stderr, "Failed: Unable to allocate %lu bytes.\n", N * sizeof *G);
-        return -1;
-    }
-
-    if ((ret_code = matalloc(N, 0, &V)) != 0) {
+    int ret_code = matalloc(N, 0, &D);
+    if (ret_code != 0) {
         return ret_code;
     }
 
-    if ((ret_code = matalloc(N, 1, &E)) != 0) {
+    ret_code = fftw_malloc_s(&G, N * sizeof *G);
+    if (ret_code != 0) {
         return ret_code;
     }
 
-    if ((ret_code = matalloc(N, 0, &p)) != 0) {
+    ret_code = matalloc(N, 0, &V);
+    if (ret_code != 0) {
         return ret_code;
     }
 
-    if ((ret_code = matalloc(N, 1, &rfo)) != 0) {
+    ret_code = matalloc(N, 0, &E);
+    if (ret_code != 0) {
+        return ret_code;
+    }
+
+    ret_code = matalloc(N, 0, &p);
+    if (ret_code != 0) {
+        return ret_code;
+    }
+
+    ret_code = matalloc(N, 0, &rfo);
+    if (ret_code != 0) {
         return ret_code;
     }
 
@@ -286,33 +293,25 @@ int allocate_matrices(void) {
 }
 
 int matalloc(const size_t N, const int init, double complex **restrict X) {
-    double complex *Y;
+    int ret_code;
     if (init) {
-        Y = mkl_calloc(N, sizeof *Y, alignment);
+        ret_code = calloc_align_s((void **) X, N, sizeof **X);
     } else {
-        Y = mkl_malloc(N * sizeof *Y, alignment);
+        ret_code = malloc_align_s((void **) X, N * sizeof **X);
     }
-
-    if (!Y) {
-        fprintf(stderr, "Failed: Unable to allocate %lu bytes.\n", N * sizeof *rfo);
-        return -1;
-    }
-
-    *X = Y;
-
-    return 0;
+    return ret_code;
 }
 
 void vefie_cleanup(void) {
-    if (!D) mkl_free(D);
-    if (!G) mkl_free(G);
-    if (!V) mkl_free(V);
+    if (!D) free(D);
+    if (!G) fftw_free(G);
+    if (!V) free(V);
 
-    if (!E) mkl_free(E);
+    if (!E) free(E);
 
-    if (!p) mkl_free(p);
+    if (!p) free(p);
 
-    if (!rfo) mkl_free(rfo);
+    if (!rfo) free(rfo);
 
     if (!in) fftw_free(in);
     if (!out) fftw_free(out);

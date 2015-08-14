@@ -25,17 +25,6 @@
  * Purpose
  * =======
  *
- * The byte alignment used with the Intel MKL library to ensure similarity
- * between runs.
- *
- * =============================================================================
- */
-extern int alignment;
-
-/**
- * Purpose
- * =======
- *
  * The matrices used in the VEFIE when computing an indoor propagation problem.
  *
  * Matrices

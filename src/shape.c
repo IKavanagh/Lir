@@ -22,7 +22,6 @@
 #include <float.h>
 #include <limits.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 #include "matlib.h"
 
@@ -39,16 +38,26 @@ int *shape = NULL;
 material_t *material = NULL;
 
 int init_shape(const char *restrict filename, const double f, const int disc_per_lambda, const int block_size) {
-    // TODO: Add error checking
+    // TODO: Document possible return values
     int region_count;
     region_t *regions;
+
+    if (f < 0) {
+        return -10;
+    } else if (disc_per_lambda < 1) {
+        return -11;
+    } else if (block_size < 1) {
+        return -12;
+    }
 
     int ret_code = read_shape(filename, &regions, &region_count);
     if (ret_code == 0) {
         ret_code = create_shape(f, disc_per_lambda, block_size, regions, region_count);
     }
 
-    free(regions);
+    if (!regions) {
+        free(regions);
+    }
 
     return ret_code;
 }
@@ -183,9 +192,8 @@ int read_shape(const char *restrict filename, region_t **restrict regions, int *
     y = ylim[1] - ylim[0];
     z = zlim[1] - zlim[0];
 
-    region_t *r = *regions;
-    if (!r) {
-        free(r);
+    if (!(*regions)) {
+        free((*regions));
     }
     *regions = region;
     *region_count = count;

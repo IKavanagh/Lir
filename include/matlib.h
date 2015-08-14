@@ -109,7 +109,6 @@ int malloc_s(void **ptr, size_t size);
  */
 int realloc_s(void **ptr, size_t new_size);
 
-
 /**
  * Purpose
  * =======
@@ -139,3 +138,65 @@ int realloc_s(void **ptr, size_t new_size);
  * =============================================================================
  */
 int fftw_malloc_s(fftw_complex **ptr, size_t size);
+
+/**
+ * Purpose
+ * =======
+ *
+ * Safer version of calloc() which allocates memory aligned on a 64 byte
+ * boundary and checks if the returned pointer was valid.
+ *
+ * Arguments
+ * =========
+ *
+ * n        (input/output) ADDRESS of POINTER.
+ *          The address of the pointer which should point to the new
+ *          dynamically allocated section of memory.
+ *
+ * nelem    (input) SIZE_T.
+ *          The number of elements to allocate.
+ * 
+ * elsize   (input) SIZE_T.
+ *          The size of one element in memory to allocate.
+ *
+ * Output
+ * ======
+ *
+ *          INTEGER.
+ *          =  0: Memory dynamically allocated and zeroed successfully.
+ *
+ *          = -1: Unable to allocate memory.
+ *
+ * =============================================================================
+ */
+int calloc_align_s(void **ptr, size_t nelem, size_t elsize);
+
+/**
+ * Purpose
+ * =======
+ *
+ * Safer version of malloc() which allocates memory aligned on a 64 byte
+ * boundary and checks if the returned pointer was valid.
+ *
+ * Arguments
+ * =========
+ *
+ * n        (input/output) ADDRESS of POINTER.
+ *          The address of the pointer which should point to the new
+ *          dynamically allocated section of memory.
+ *
+ * size     (input) SIZE_T.
+ *          The size of memory to allocate.
+ *
+ * Output
+ * ======
+ *
+ *          INTEGER.
+ *          =  0: Memory dynamically allocated and zeroed successfully.
+ *
+ *          = -1: Unable to allocate memory.
+ *
+ * =============================================================================
+ */
+
+int malloc_align_s(void **ptr, size_t size);

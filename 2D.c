@@ -12,6 +12,7 @@
 
 #include "krylov.h"
 #include "matio.h"
+#include "matlib.h"
 #include "monotonic_clock.h"
 #include "shape.h"
 #include "vefie.h"
@@ -48,7 +49,8 @@ int main(int argc, char **argv) {
     int iter = 1000, N = n*m, info;
     double resid = 1e-3;
 
-    double complex *work = mkl_malloc((size_t) N * 9 * sizeof *work, alignment);
+    double complex *work;
+    ret_code = malloc_align_s((void **) &work, N * 9 * sizeof *work);
 
     t = monotonic_clock();
     info = rbicgstab(N, V, E, work, N, &iter, &resid, matvec, no_pre, rfo);
