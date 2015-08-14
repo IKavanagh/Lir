@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     if (argc < 4) {
         fprintf(stderr, "Error: Wrong number of arguments!\n");
         fprintf(stderr, "usage: %s f x y [file]\n", argv[0]);
-        exit(4 - argc);
+        return 4 - argc;
     }
 
     const char *filename = "input/building.txt";
