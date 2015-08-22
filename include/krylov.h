@@ -20,7 +20,6 @@
 #pragma once
 
 #include <complex.h>
-#include <fftw3.h>
 
 /**
  * Purpose
