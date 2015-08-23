@@ -19,7 +19,7 @@
 #pragma once
 
 #include <complex.h>
-#include <math.h>
+#include <tgmath.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -277,7 +277,9 @@ double lambda(double complex k);
  * Computes the value of a hertzian dipole source at the point p relative to
  * the antenna. In 2D the Hertzian dipole is represented as a line source given
  * by
+ *
  *              H_{0}^{2}(k0*R)
+ *
  * where H_{0}^{(2)} is the zeroth order bessel function of the second kind.
  *
  * Arguments
@@ -286,33 +288,33 @@ double lambda(double complex k);
  * k0       (input) DOUBLE.
  *          Free space wave number.
  *
- * antenna  (input) DOUBLE COMPLEX.
+ * antenna  (input) DOUBLE ARRAY, dimension 2.
  *          Position of the antenna in the problem.
- *          The real part denotes the x-coordinate and the imaginary part the
+ *          The first element denotes the x-coordinate and the second the
  *          y-coordinate.
  * 
- * point    (input) DOUBLE COMPLEX.
+ * point    (input) DOUBLE ARRAY, dimension 2.
  *          x-y position in the problem the incident field is to be computed at.
- *          The real part denotes the x-coordinate and the imaginary part the
+ *          The first element denotes the x-coordinate and the second the
  *          y-coordinate.
  * 
- * Output
- * ======
- *
- *          DOUBLE COMPLEX.
- *          Value of a hertzian dipole source at the point p relative to the
- *          antenna.
+ * field    (output) DOUBLE COMPLEX ARRAY, dimension 3.
+ *          The strength of the Hertzan dipole source at the point p relative
+ *          to the antenna. TM^z polarisation is assumed resulting in both the
+ *          x, and y fields to be 0 and the z component to be the only non-zero
+ *          component.
  *
  * =============================================================================
  */
-double complex hertzian_dipole(const double k0, const double complex antenna, const double complex point);
+void hertzian_dipole_2d(const double k0, const double antenna[2], const double point[2], double complex field[3]);
 
 /**
  * Purpose
  * =======
  *
  * Computes the value of a plane value given by
- *              exp(-jkp)
+ *
+ *              exp(-jkx)
  *
  * Arguments
  * =========
@@ -320,22 +322,98 @@ double complex hertzian_dipole(const double k0, const double complex antenna, co
  * k0       (input) DOUBLE.
  *          Free space wave number.
  *
- * antenna  (input) DOUBLE COMPLEX.
+ * antenna  (input) DOUBLE ARRAY, dimension 2.
  *          Position of the antenna in the problem.
- *          The real part denotes the x-coordinate and the imaginary part the
+ *          The first element denotes the x-coordinate and the second the
  *          y-coordinate.
  * 
- * point    (input) DOUBLE COMPLEX.
+ * point    (input) DOUBLE ARRAY, dimension 2.
  *          x-y position in the problem the incident field is to be computed at.
- *          The real part denotes the x-coordinate and the imaginary part the
+ *          The first element denotes the x-coordinate and the second the
  *          y-coordinate.
  * 
- * Output
- * ======
- *
- *          DOUBLE COMPLEX.
- *          Value of plane wave source at the point p relative to the antenna.
+ * field    (output) DOUBLE COMPLEX ARRAY, dimension 3.
+ *          The strength of the plane wave source at the point p relative
+ *          to the antenna. TM^z polarisation is assumed resulting in both the
+ *          x, and y fields to be 0 and the z component to be the only non-zero
+ *          component.
  *
  * =============================================================================
  */
-double complex plane_wave(const double k0, const double complex antenna, const double complex point);
+void plane_wave_2d(const double k0, const double antenna[2], const double point[2], double complex field[3]);
+
+/**
+ * Purpose
+ * =======
+ *
+ * Computes the value of a hertzian dipole source at the point p relative to
+ * the antenna. Assumes 
+ *
+ *              R = |r - r'|
+ *
+ * is sufficiently large such that the Hertzian dipole can be represented 
+ * entirely and accurately by only the far field representation.
+ *
+ * Arguments
+ * =========
+ * 
+ * k0       (input) DOUBLE.
+ *          Free space wave number.
+ *
+ * f        (input) DOUBLE.
+ *          Frequency of the antenna.
+ *
+ * antenna  (input) DOUBLE ARRAY, dimension 3.
+ *          Position of the antenna in the problem.
+ *          The first element denotes the x-coordinate, the second the
+ *          y-coordinate and the third the z-coordinate.
+ * 
+ * point    (input) DOUBLE ARRAY, dimension 3.
+ *          x-y position in the problem the incident field is to be computed at.
+ *          The first element denotes the x-coordinate, the second the
+ *          y-coordinate and the third the z-coordinate.
+ * 
+ * field    (output) DOUBLE COMPLEX ARRAY, dimension 3.
+ *          The strength of the Hertzan dipole source at the point p relative
+ *          to the antenna.
+ *
+ * =============================================================================
+ */
+void hertzian_dipole_3d(const double k0, const double f, const double antenna[3], const double point[3], double complex field[3]);
+
+/**
+ * Purpose
+ * =======
+ *
+ * Computes the value of a plane value given by
+ *
+ *              exp(-jkx)
+ *
+ * Arguments
+ * =========
+ * 
+ * k0       (input) DOUBLE.
+ *          Free space wave number.
+ *
+ * f        (input) DOUBLE.
+ *          Frequency of the antenna.
+ *
+ * antenna  (input) DOUBLE ARRAY, dimension 3.
+ *          Position of the antenna in the problem.
+ *          The first element denotes the x-coordinate, the second the
+ *          y-coordinate and the third the z-coordinate.
+ * 
+ * point    (input) DOUBLE ARRAY, dimension 3.
+ *          x-y position in the problem the incident field is to be computed at.
+ *          The first element denotes the x-coordinate, the second the
+ *          y-coordinate and the third the z-coordinate.
+ * 
+ * field    (output) DOUBLE COMPLEX ARRAY, dimension 3.
+ *          The strength of the plane wave source at the point p relative
+ *          to the antenna. TM^z polarisation is assumed resulting in both the
+ *          x, and y fields to be 0 and the z component to be the only non-zero
+ *          component.
+ *
+ * =============================================================================
+ */
+void plane_wave_3d(const double k0, const double f, const double antenna[3], const double point[3], double complex field[3]);

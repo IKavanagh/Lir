@@ -97,7 +97,7 @@
  *
  *                Illegal parameter:
  *
- *                   -1: matrix dimension n < 0
+ *                   -1: Matrix dimension n < 0
  *                   -2: ldw < n
  *                   -3: Maximum number of iterations iter <= 0.
  *

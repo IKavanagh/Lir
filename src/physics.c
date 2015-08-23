@@ -35,7 +35,7 @@ inline int matcmp(material_t m1, material_t m2) {
     return fabs(m1.epsilon_r - m2.epsilon_r) < 1e-15 && fabs(m1.mu_r - m2.mu_r) < 1e-15 && fabs(m1.sigma - m2.sigma) < 1e-15;
 }
 
-material_t free_space(void) {
+inline material_t free_space(void) {
     return (material_t) { .epsilon_r = 1.0, .mu_r = 1.0, .sigma = 0.0 };
 }
 
@@ -52,17 +52,54 @@ double complex kd(double f, double epsilonr, double mur, double sigma) {
     double mu = mur * (4.0 * M_PI * 1e-7);
     double epsilon = epsilonr * 8.854e-12;
 
-    return -I * csqrt(I * omega * mu * (sigma + I * omega * epsilon));
+    return -I * sqrt(I * omega * mu * (sigma + I * omega * epsilon));
 }
 
 inline double lambda(double complex k) {
     return 2.0 * M_PI / creal(k);
 }
 
-inline double complex hertzian_dipole(const double k0, const double complex antenna, const double complex point) {
-    return h2n(0, k0*cabs(point - antenna));
+void hertzian_dipole_2d(const double k0, const double antenna[2], const double point[2], double complex field[3]) {
+    double R = sqrt(pow(antenna[0] - point[0], 2) + pow(antenna[1] - point[1], 2));
+
+    field[0] = 0.0;
+    field[1] = 0.0;
+    field[2] = exp(-I*k0*R);
 }
 
-inline double complex plane_wave(const double k0, const double complex antenna, const double complex point) {
-    return cexp(-I*k0*creal(point));
+void plane_wave_2d(const double k0, const double antenna[2], const double point[2], double complex field[3]) {
+    field[0] = 0.0;
+    field[1] = 0.0;
+    field[2] = exp(-I*k0*(point[0] - antenna[0]));
+}
+
+void hertzian_dipole_3d(const double k0, const double f, const double antenna[3], const double point[3], double complex field[3]) {
+    double mu0 = 4e-7*M_PI;
+    double omega = 2*M_PI*f;
+
+    double l = lambda(k0) / 2;
+    double i = 0.01;
+
+    double x = point[0] - antenna[0];
+    double y = point[1] - antenna[1];
+    double z = point[2] - antenna[2];
+
+    double R = sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
+
+    double phi = atan2(y, x);
+    double theta = atan2(sqrt(pow(x, 2) + pow(y, 2)), z);
+
+    double complex theta_field = (1 / R) * (((i*l) / (4 * M_PI)) * I * omega * mu0);
+
+    theta_field *= exp(-I*k0*R) * sin(theta);
+
+    field[0] = theta_field * cos(theta) * cos(phi);
+    field[1] = theta_field * cos(theta) * sin(phi);
+    field[2] = theta_field * sin(theta);
+}
+
+void plane_wave_3d(const double k0, const double f, const double antenna[3], const double point[3], double complex field[3]) {
+    field[0] = 0.0;
+    field[1] = 0.0;
+    field[2] = exp(-I*k0*(point[0] - antenna[0]));
 }
