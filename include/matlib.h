@@ -1,5 +1,5 @@
 /*
-   Safer alloc() functions which check the returned pointer is valid.
+   Safer ...alloc() functions which check the returned pointer is valid.
 
    Copyright 2015 Ian Kavanagh
 
@@ -20,7 +20,6 @@
 
 #include <complex.h>
 #include <fftw3.h>
-#include <stddef.h>
 
 /**
  * Purpose
@@ -198,5 +197,4 @@ int calloc_align_s(void **ptr, size_t nelem, size_t elsize);
  *
  * =============================================================================
  */
-
 int malloc_align_s(void **ptr, size_t size);
