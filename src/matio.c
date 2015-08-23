@@ -91,6 +91,12 @@ inline void printi(FILE *restrict stream, const void *x) {
     fprintf(stream, "%d\n", (*i));
 }
 
+inline void printd(FILE *restrict stream, const void *x) {
+    const double *d = x;
+
+    fprintf(stream, "%.4f\n", (*d));
+}
+
 inline void printm(FILE *restrict stream, const void *x) {
     const material_t *m = x;
 

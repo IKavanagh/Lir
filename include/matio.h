@@ -242,6 +242,27 @@ void printi(FILE *restrict stream, const void *x);
  * Purpose
  * =======
  *
+ * Prints the element pointed to by x which is assumed to be a double on 1
+ * line in the stream.
+ *
+ * Arguments
+ * =========
+ *
+ * stream   (input) FILE pointer.
+ *          A file pointer for the file that the element is to be printed to.
+ * 
+ * x        (input) VOID pointer.
+ *          A void pointer to the element that should be printed. This is cast
+ *          to a double within the function.
+ *
+ * =============================================================================
+ */
+void printd(FILE *restrict stream, const void *x);
+
+/**
+ * Purpose
+ * =======
+ *
  * Prints the element pointed to by x which is assumed to be a material on 1
  * line in the stream.
  *
