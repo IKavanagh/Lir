@@ -116,7 +116,54 @@ extern material_t *material;
  * ======
  *
  *          INTEGER.
- *          =  0: Building created successfully.
+ *          =  0: Shape read successfully.
+ *
+ *          >  0: File I/O error
+ *
+ *                1: File, filename, doesn't exist.
+ *                2: Error reading file.
+ *
+ *          <  0: Error allocating memory or illegal parameter
+ *
+ *                Memory allocation error:
+ *
+ *                   -1: Unable to dynamically allocate memory
+ *
+ *                Illegal parameter:
+ *
+ *                   -10: Frequency f < 0
+ *                   -11: Discretisations disc_per_lambda < 1
+ *                   -12: Block size block_size < 1
+ *
+ * =============================================================================
+ */
+int init_shape(const char *restrict filename, const double f, const int disc_per_lambda, const int block_size);
+
+/**
+ * Purpose
+ * =======
+ *
+ * Reads in an entire shape description from file and stores each region in the
+ * regions array and the number of regions read into region_count.
+ *
+ * Arguments
+ * =========
+ *
+ * filename (input) STRING.
+ *          The name of the file the shape description is to be read from.
+ *
+ * regions  (output) REGION_T array.
+ *          Stores all of the regions that were read in from the file.
+ *
+ * region_count (output) INTEGER.
+ *          The number of regions that were read in from the file and
+ *          consequently are stored in regions.
+ *
+ * Output
+ * ======
+ *
+ *          INTEGER.
+ *          =  0: Shape read successfully.
  *
  *          =  1: File filename doesn't exist.
  *
@@ -126,7 +173,40 @@ extern material_t *material;
  *
  * =============================================================================
  */
-int init_shape(const char *restrict filename, const double f, const int disc_per_lambda, const int block_size);
+int read_shape(const char *restrict filename, region_t **restrict regions, int *restrict region_count);
+
+/**
+ * Purpose
+ * =======
+ *
+ * Reads in one region from the file pointed to by fp and stores it in region.
+ * 
+ * If the region is made up of a new material it stores this in the material
+ * array and increases the number of materials known.
+ *
+ * Arguments
+ * =========
+ *
+ * fp       (input) FILE.
+ *          A pointer to the current location in the file where the region is to
+ *          be read from.
+ *
+ * region   (output) REGION_T.
+ *          Stores the region that was read in from the file.
+ *
+ * Output
+ * ======
+ *
+ *          INTEGER.
+ *          =  0: Region read successfully.
+ *
+ *          =  2: Error reading file.
+ *
+ *          =  -1: Unable to allocate memory.
+ *
+ * =============================================================================
+ */
+int read_region(FILE *restrict fp, region_t *restrict region);
 
 /**
  * Purpose
@@ -174,75 +254,6 @@ int init_shape(const char *restrict filename, const double f, const int disc_per
  * =============================================================================
  */
 int create_shape(const double f, const int disc_per_lambda, const int block_size, const region_t *restrict regions, const int region_count);
-
-/**
- * Purpose
- * =======
- *
- * Reads in one region from the file pointed to by fp and stores it in region.
- * 
- * If the region is made up of a new material it stores this in the material
- * array and increases the number of materials known.
- *
- * Arguments
- * =========
- *
- * fp       (input) FILE.
- *          A pointer to the current location in the file where the region is to
- *          be read from.
- *
- * region   (output) REGION_T.
- *          Stores the region that was read in from the file.
- *
- * Output
- * ======
- *
- *          INTEGER.
- *          =  0: Building created successfully.
- *
- *          =  2: Error reading file.
- *
- *          =  -1: Unable to allocate memory.
- *
- * =============================================================================
- */
-int read_region(FILE *restrict fp, region_t *restrict region);
-
-/**
- * Purpose
- * =======
- *
- * Reads in an entire shape description from file and stores each region in the
- * regions array and the number of regions read in into region_count.
- *
- * Arguments
- * =========
- *
- * filename (input) STRING.
- *          The name of the file the shape description is to be read from.
- *
- * regions  (output) REGION_T array.
- *          Stores all of the regions that were read in from the file.
- *
- * region_count (output) INTEGER.
- *          The number of regions that were read in from the file and
- *          consequently are stored in regions.
- *
- * Output
- * ======
- *
- *          INTEGER.
- *          =  0: Building created successfully.
- *
- *          =  1: File filename doesn't exist.
- *
- *          =  2: Error reading file.
- *
- *          =  -1: Unable to allocate memory.
- *
- * =============================================================================
- */
-int read_shape(const char *restrict filename, region_t **restrict regions, int *restrict region_count);
 
 /**
  * Purpose

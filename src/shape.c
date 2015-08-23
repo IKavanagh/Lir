@@ -38,9 +38,8 @@ int *shape = NULL;
 material_t *material = NULL;
 
 int init_shape(const char *restrict filename, const double f, const int disc_per_lambda, const int block_size) {
-    // TODO: Document possible return values
-    int region_count;
-    region_t *regions;
+    int region_count = 0;
+    region_t *regions = NULL;
 
     if (f < 0) {
         return -10;
@@ -60,73 +59,6 @@ int init_shape(const char *restrict filename, const double f, const int disc_per
     }
 
     return ret_code;
-}
-
-int create_shape(const double f, const int disc_per_lambda, const int block_size, const region_t *restrict regions, const int region_count) {
-    double lambda0 = lambda(kd(f, 1, 1, 0));
-
-    n = (int) floor (x / (lambda0 / disc_per_lambda));
-    n += block_size - n % block_size;
-
-    double dx = x / (double) n;
-
-    m = (int) floor (y / (lambda0 / disc_per_lambda));
-    m += block_size - m % block_size;
-
-    double dy = y / (double) m;
-
-    o = (int) floor (z / (lambda0 / disc_per_lambda));
-    o += block_size - o % block_size;
-
-    double dz = z / (double) o;
-
-    if (!shape) {
-        free(shape); // Guard against memory leaks
-    }
-    int ret_code = calloc_s((void **) &shape, (size_t) (o*m*n), sizeof *shape);
-    if (ret_code != 0) {
-        return ret_code;
-    }
-
-    for (int l = 0; l < region_count; ++l) {
-        region_t region = regions[l];
-
-        int x_range[2] = {INT_MAX}, y_range[2] = {INT_MAX}, z_range[2] = {INT_MAX};
-
-        x_range[1] = 0;
-        y_range[1] = 0;
-        z_range[1] = 0;
-
-        for (int i = 0; i < 4; ++i) {
-            int Nx = (int) round ((region.vertex[i].x - xlim[0]) / dx);
-            int My = (int) round ((region.vertex[i].y - ylim[0]) / dy);
-
-            x_range[0] = min(x_range[0], Nx);
-            x_range[1] = max(x_range[1], Nx);
-
-            y_range[0] = min(y_range[0], My);
-            y_range[1] = max(y_range[1], My);
-
-            // z must be treated differently as its given in a base coordinate
-            // and a height
-            int Oz = (int) round ((region.vertex[i].z - zlim[0]) / dz);
-            z_range[0] = min(z_range[0], Oz);
-
-            Oz = (int) round ((region.height - zlim[0]) / dz);
-            z_range[1] = max(z_range[1], Oz);
-        }
-
-        for (int k = z_range[0]; k < z_range[1]; ++k) {
-            for (int j = y_range[0]; j < y_range[1]; ++j) {
-                for (int i = x_range[0]; i < x_range[1]; ++i) {
-                    int idx = (k * m + j) * n + i;
-                    shape[idx] = region.material_id;
-                }
-            }
-        }
-    }
-
-    return 0;
 }
 
 int read_shape(const char *restrict filename, region_t **restrict regions, int *restrict region_count) {
@@ -162,6 +94,14 @@ int read_shape(const char *restrict filename, region_t **restrict regions, int *
         if (c == '#') { // Comment skip to next line
             while ((c = fgetc(fp)) != EOF && c != '\n');
             c = fgetc(fp); // First character of next line
+            if (c == '#') {
+                ret_code = ungetc(c, fp);
+                if (ret_code == EOF) {
+                    fprintf(stderr, "ungetc(): Failed to put %c back into %s at line %d\n", c, __FILE__, __LINE__-6);
+                    return 2;
+                }
+                continue;
+            }
         }
 
         if (c == '(') { // Beginning of coordinate list
@@ -188,12 +128,12 @@ int read_shape(const char *restrict filename, region_t **restrict regions, int *
         }
     }
 
-    x = xlim[1] - ylim[0];
+    x = xlim[1] - xlim[0];
     y = ylim[1] - ylim[0];
     z = zlim[1] - zlim[0];
 
     if (!(*regions)) {
-        free((*regions));
+        free(*regions); // Guard against memory leaks
     }
     *regions = region;
     *region_count = count;
@@ -260,6 +200,74 @@ int read_region(FILE *restrict fp, region_t *restrict region) {
     }
 
     (*region).material_id = material_id;
+
+    return 0;
+}
+
+int create_shape(const double f, const int disc_per_lambda, const int block_size, const region_t *restrict regions, const int region_count) {
+    double lambda0 = lambda(kd(f, 1, 1, 0));
+
+    n = (int) floor (x / (lambda0 / disc_per_lambda));
+    n += block_size - n % block_size;
+
+    double dx = x / (double) n;
+
+    m = (int) floor (y / (lambda0 / disc_per_lambda));
+    m += block_size - m % block_size;
+
+    double dy = y / (double) m;
+
+    o = (int) floor (z / (lambda0 / disc_per_lambda));
+    o += block_size - o % block_size;
+
+    double dz = z / (double) o;
+
+    if (!shape) {
+        free(shape); // Guard against memory leaks
+    }
+    int ret_code = calloc_s((void **) &shape, (size_t) (o*m*n), sizeof *shape);
+    if (ret_code != 0) {
+        return ret_code;
+    }
+
+    for (int l = 0; l < region_count; ++l) {
+        region_t region = regions[l];
+
+        int x_range[2] = {INT_MAX}, y_range[2] = {INT_MAX}, z_range[2] = {INT_MAX};
+
+        x_range[1] = 0;
+        y_range[1] = 0;
+        z_range[1] = 0;
+
+        for (int i = 0; i < 4; ++i) {
+            int Nx = (int) round((region.vertex[i].x - xlim[0]) / dx);
+            int My = (int) round((region.vertex[i].y - ylim[0]) / dy);
+
+            x_range[0] = min(x_range[0], Nx);
+            x_range[1] = max(x_range[1], Nx);
+
+            y_range[0] = min(y_range[0], My);
+            y_range[1] = max(y_range[1], My);
+
+            // z must be treated differently as its given in a base coordinate
+            // and a height
+            int Oz = (int) round((region.vertex[i].z - zlim[0]) / dz);
+            z_range[0] = min(z_range[0], Oz);
+
+            Oz = (int) round(((region.height + region.vertex[i].z) - zlim[0]) / dz);
+            Oz = min(o, Oz); // TODO: Determine why this is needed
+            z_range[1] = max(z_range[1], Oz);
+        }
+
+        for (int k = z_range[0]; k < z_range[1]; ++k) {
+            for (int j = y_range[0]; j < y_range[1]; ++j) {
+                for (int i = x_range[0]; i < x_range[1]; ++i) {
+                    int idx = (k * m + j) * n + i;
+                    shape[idx] = region.material_id;
+                }
+            }
+        }
+    }
 
     return 0;
 }
