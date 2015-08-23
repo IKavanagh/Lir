@@ -64,7 +64,7 @@ void hertzian_dipole_2d(const double k0, const double antenna[2], const double p
 
     field[0] = 0.0;
     field[1] = 0.0;
-    field[2] = exp(-I*k0*R);
+    field[2] = h2n(0, k0*R);
 }
 
 void plane_wave_2d(const double k0, const double antenna[2], const double point[2], double complex field[3]) {
