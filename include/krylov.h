@@ -72,7 +72,7 @@
  * 
  *              matvec(alpha, x, beta, y)
  *
- * pre      (external subroutine)
+ * pre_none (external subroutine)
  *          An external user supplied subroutine to apply the preconditioner for
  *          the system.
  *
@@ -169,7 +169,7 @@ int bicgstab(const int n, const double complex *restrict b, double complex *rest
  * 
  *              matvec(alpha, x, beta, y)
  *
- * pre      (external subroutine)
+ * pre_none (external subroutine)
  *          An external user supplied subroutine to apply the preconditioner for
  *          the system.
  *
@@ -239,7 +239,7 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
  *
  * =============================================================================
  */
-void no_pre(double complex *restrict x, const double complex *restrict b);
+void pre_none(double complex *restrict x, const double complex *restrict b);
 
 /**
  * Purpose
@@ -256,9 +256,12 @@ void no_pre(double complex *restrict x, const double complex *restrict b);
  * iter     (input) INTEGER.
  *          The number of iterations as returned by bicgstab().
  *
+ * resid    (input) INTEGER.
+ *          The final residual error computed by the bicgstab().
+ *
  * t        (input) DOUBLE.
  *          The length of time taken to by the bicgstab().
  *
  * =============================================================================
  */
-void iprint(int info, int iter, double t);
+void iprint(int info, int iter, double resid, double t);

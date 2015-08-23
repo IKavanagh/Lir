@@ -152,7 +152,10 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
         zcopy_(&n, &work[r * ldw], &inc, &work[rtld * ldw], &inc);
     }
 
-    double bnrm2 = dznrm2_(&n, &work[r * ldw], &inc);
+    double bnrm2 = dznrm2_(&n, &work[r * ldw], &inc), rbnrm2;
+    if (rfo) {
+        rbnrm2 = dznrm2_(&n, &b[0], &inc);
+    }
     if (bnrm2 < partol) {
         bnrm2 = 1.0;
     }
@@ -233,7 +236,7 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
                 zcopy_(&n, &b[0], &inc, &work[red * ldw], &inc);
                 (*matvec)(&minus_one, &x[0], &one, &work[red * ldw]); // red = b - A*x
 
-                *resid = dznrm2_(&n, &work[red * ldw], &inc) / dznrm2_(&n, &b[0], &inc);
+                *resid = dznrm2_(&n, &work[red * ldw], &inc) / rbnrm2;
 
                 if (*resid <= tol) {
                     return 0;
@@ -255,7 +258,9 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
         (*matvec)(&minus_one, &x[0], &one, &work[r * ldw]); // r = b - A*x;
         zgbmv_(&NoTrans, &n, &n, &kl, &ku, &one, &work[neg * ldw], &inc, &work[r * ldw], &inc, &one, &x[0], &inc); // x = x + (~rfo)(b - A*x)
 
-        // TODO: Compute new resid
+        zcopy_(&n, &b[0], &inc, &work[r * ldw], &inc);
+        (*matvec)(&minus_one, &x[0], &one, &work[r * ldw]); // r = b - A*x;
+        *resid = dznrm2_(&n, &work[r * ldw], &inc) / rbnrm2;
     }
 
     if (*iter == maxit) {
@@ -264,16 +269,16 @@ int rbicgstab(const int n, const double complex *restrict b, double complex *res
     return 0;
 }
 
-void no_pre(double complex *restrict x, const double complex *restrict b) {
+void pre_none(double complex *restrict x, const double complex *restrict b) {
     extern void zcopy_(const int *n, const void *x, const int *incx, void *y,
                        const int *incy);
     zcopy_(&N, b, &inc, x, &inc);
 }
 
-void iprint(int info, int iter, double t) {
+void iprint(int info, int iter, double resid, double t) {
     switch(info) {
         case 0:
-            printf("BiCGSTAB converged successfully in %.4f seconds after %d iterations.\n", t, iter);
+            printf("BiCGSTAB converged successfully to %.4f in %.2f seconds after %d iterations.\n", resid, t, iter);
             break;
         case -1:
             printf("Illegal parameter - n must be >= 0.\n");
